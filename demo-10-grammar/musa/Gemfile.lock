@@ -1,0 +1,42 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    citrus (3.0.2)
+    ffi (1.17.3-arm64-darwin)
+    forwardable (1.4.0)
+    logger (1.7.0)
+    matrix (0.4.3)
+    midi-communications (0.7.0)
+      midi-communications-macos (~> 0.7)
+    midi-communications-macos (0.7.0)
+      ffi (~> 1.15, >= 1.15.4)
+    midi-events (0.7.0)
+    midi-parser (0.5.0)
+      midi-events (~> 0.7)
+    musa-dsl (0.42.0)
+      citrus (~> 3.0)
+      logger (~> 1.4, >= 1.4.3)
+      matrix (~> 0.4)
+      midi-events (~> 0.7)
+      midi-parser (~> 0.5)
+      prime (~> 0.1)
+      sorted_set (~> 1.0)
+    prime (0.1.4)
+      forwardable
+      singleton
+    rbtree (0.4.6)
+    set (1.1.2)
+    singleton (0.3.0)
+    sorted_set (1.0.3)
+      rbtree
+      set (~> 1.0)
+
+PLATFORMS
+  arm64-darwin
+
+DEPENDENCIES
+  midi-communications
+  musa-dsl (~> 0.41)
+
+BUNDLED WITH
+   2.7.1
