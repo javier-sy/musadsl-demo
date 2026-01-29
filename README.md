@@ -355,18 +355,29 @@ Patrones rítmicos y melódicos generados por gramática formal: estructura A-B-
 **Nivel:** Avanzado | **Clock:** Master (TimerClock)
 
 ### Descripción Musical
-Gestos sonoros definidos como matrices de puntos en espacio multidimensional (tiempo, pitch, velocity), convertidos a secuencias reproducibles.
+Gestos musicales representados como matrices 2D/3D con transformaciones matriciales (suma, producto Hadamard) y polifonía emergente. Una espiral de Arquímedes proyectada sobre el eje temporal genera múltiples voces cuando la curva "retrocede" en el tiempo.
+
+### Secciones
+1. **Matriz 2D** - tiempo y pitch
+2. **Matriz 3D** - tiempo, pitch y velocity
+3. **Transposición** - suma de matrices
+4. **Escalado temporal** - producto Hadamard (augmentación/disminución)
+5. **Inversión melódica** - reflexión con operaciones matriciales
+6. **Espiral 2D** - polifonía emergente desde geometría
+7. **Condensación** - fusión de matrices conectadas
 
 ### Recursos musa-dsl
 - `using Musa::Extension::Matrix` - Refinement para matrices
-- `Matrix[[0, 60, 100], [0.5, 72, 80], [1, 65, 90]]` - Definición de gesto
-- `.to_p(time_dimension: 0)` - Conversión a P sequences
-- `.condensed_matrices` - Unión de gestos conectados
-- `sequencer.play_timed(p_sequence)` - Reproducción temporizada
+- `Matrix[[0r, 60], [1/2r, 64], [1r, 67]]` - Definición con Rational
+- `matrix + Matrix[*[[0, 4]] * n]` - Transposición por suma
+- `matrix.hadamard_product(Matrix[*[[2, 1]] * n])` - Escalado temporal
+- `.to_p(time_dimension: 0)` - Conversión a P sequences (múltiples si hay retrocesos)
+- `[m1, m2].to_p()` - Condensación de matrices conectadas
+- `play_timed(timed_serie) { |v| ... }` - Reproducción temporizada
 
 ### Configuración DAW
-- **Pistas:** 1 pista MIDI con instrumento expresivo
-- **Opcional:** Automatización de parámetros (pan, filtro)
+- **Pistas:** 2 pistas MIDI
+- **Sincronización:** Master (musa-dsl controla el tempo)
 
 ---
 
