@@ -2,7 +2,7 @@
 
 Esta carpeta contiene 23 demostraciones progresivas del framework **musa-dsl** para composición algorítmica en Ruby. Incluye demos con MIDI y OSC, basadas en técnicas reales usadas en obras de composición.
 
-> **Nota:** Las demos 00-10 han sido revisadas y están disponibles en el repositorio. Las demos 11-22 están pendientes de revisión.
+> **Nota:** Las demos 00-11 han sido revisadas y están disponibles en el repositorio. Las demos 12-22 están pendientes de revisión.
 
 > **Nota:** Son demostraciones orientadas a mostrar las características y posibilidades de musa-dsl. NO PRETENDEN TENER NINGÚN VALOR ARTÍSTICO NI CREATIVO.
 
