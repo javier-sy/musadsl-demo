@@ -26,7 +26,7 @@ module TheScore
 
     # Acorde final (después de 9 notas a 1/2 beat = 4.5 beats, última nota en 5)
     at 6 do
-      chord_pitches = [0, 2, 4].map { |g| scale[g].pitch }
+      chord_pitches = scale[0].chord.pitches
       voice.note(chord_pitches, velocity: 100, duration: 1)
       puts "Beat #{position}: Acorde final Do Mayor"
 

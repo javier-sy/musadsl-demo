@@ -29,45 +29,15 @@ bundle install
 ruby main.rb
 ```
 
-## Configuración DAW (Bitwig/Ableton)
+## Configuración DAW
 
-### Puertos MIDI requeridos
+| Puerto | Dirección |
+|--------|-----------|
+| Main | musa-dsl → DAW |
 
-| Puerto | Nombre | Dirección |
-|--------|--------|-----------|
-| Output | `Main` | musa-dsl → DAW |
-
-### Conexión MIDI
-
-1. Crear un puerto MIDI virtual:
-   - **macOS:** Usar IAC Driver (Audio MIDI Setup → IAC Driver → activar)
-   - **Windows:** Instalar loopMIDI
-
-2. En el DAW, crear una pista MIDI que reciba del puerto virtual
-
-### Pistas necesarias
-
-| Pista | Canal MIDI | Instrumento sugerido |
-|-------|------------|---------------------|
-| Piano | 1 | Piano acústico o eléctrico |
-
-### Diagrama de conexión
-
-```
-┌─────────────┐         MIDI          ┌─────────────┐
-│  main.rb    │ ────────────────────► │    DAW      │
-│ (musa-dsl)  │     Puerto virtual    │  (Bitwig/   │
-│             │                       │   Ableton)  │
-│ TimerClock  │                       │             │
-│ BPM: 120    │                       │  Piano      │
-└─────────────┘                       └─────────────┘
-```
-
-### Notas
-
-- musa-dsl controla el tempo (120 BPM)
-- El DAW solo recibe notas MIDI, no necesita enviar clock
-- Puedes grabar la salida MIDI en el DAW
+| Pista | Canal MIDI |
+|-------|------------|
+| Piano | 1 |
 
 ## Recursos musa-dsl utilizados
 
@@ -86,9 +56,12 @@ at 1 do ... end  # Evento en compás 1
 
 # Notas
 voice.note(pitch, velocity: 80, duration: 3/8r)
+
+# Chord API: obtener las 3 notas de la tríada directamente
+scale[0].chord.pitches  # => [Do, Mi, Sol] como MIDI pitches
 ```
 
-## Próximos pasos
+## Buenas prácticas
 
-- **Demo 02:** Explora los constructores de series (S, FOR, RND, etc.)
-- **Demo 03:** Crea un canon usando series buffered
+- **`scale[g].chord.pitches` para acordes**: Accede a las notas de un acorde directamente desde un grado de escala. La calidad del acorde (mayor, menor, disminuido) se deduce automáticamente del grado.
+- **`at` para scheduling directo**: Usa `at bar do ... end` para programar eventos en posiciones absolutas del compás. Es la forma más simple de scheduling — ideal cuando sabes exactamente cuándo debe sonar algo.
