@@ -64,9 +64,9 @@ module TheScore
 
       melody = H(grade: grades, duration: durations, velocity: velocities)
 
-      control = play melody do |note|
-        pitch = scale[note[:grade]].pitch
-        v_diatonic.note(pitch: pitch, velocity: note[:velocity], duration: note[:duration])
+      control = play melody do |grade:, duration:, velocity:|
+        pitch = scale[grade].pitch
+        v_diatonic.note(pitch, velocity: velocity, duration: duration)
       end
 
       control.after(1/2r) { launch :jazzy }
@@ -110,9 +110,9 @@ module TheScore
 
       melody = H(grade: grades, duration: durations, velocity: velocities)
 
-      control = play melody do |note|
-        pitch = scale[note[:grade]].pitch
-        v_jazzy.note(pitch: pitch, velocity: note[:velocity], duration: note[:duration])
+      control = play melody do |grade:, duration:, velocity:|
+        pitch = scale[grade].pitch
+        v_jazzy.note(pitch, velocity: velocity, duration: duration)
       end
 
       control.after(1/2r) { launch :minimal }
@@ -151,9 +151,9 @@ module TheScore
 
       melody = H(grade: grades, duration: durations, velocity: velocities)
 
-      control = play melody do |note|
-        pitch = scale[note[:grade]].pitch
-        v_minimal.note(pitch: pitch, velocity: note[:velocity], duration: note[:duration])
+      control = play melody do |grade:, duration:, velocity:|
+        pitch = scale[grade].pitch
+        v_minimal.note(pitch, velocity: velocity, duration: duration)
       end
 
       control.after(1/2r) do

@@ -21,7 +21,7 @@ ruby main.rb
 - Alta probabilidad de resolución a tónica
 - Duraciones fluidas (negras, blancas)
 
-### 2. Jazz (Cromático)
+### 2. Jazzy (Cromático)
 - Saltos de terceras y quintas
 - Arpegios implícitos
 - Duraciones swing (larga-corta alternancia)
@@ -33,21 +33,15 @@ ruby main.rb
 
 ## Configuración DAW
 
-### Puertos MIDI requeridos
+| Puerto | Dirección |
+|--------|-----------|
+| Main | musa-dsl → DAW |
 
-| Puerto | Nombre | Dirección |
-|--------|--------|-----------|
-| Output | (seleccionable) | musa-dsl → DAW |
-
-### Pistas necesarias
-
-| Pista | Canal MIDI | Estilo | Instrumento sugerido |
-|-------|------------|--------|---------------------|
-| Diatónico | 1 | Clásico | Piano, Cuerdas |
-| Jazzy | 2 | Jazz | Piano eléctrico, Saxo |
-| Minimal | 3 | Minimalista | Marimba, Synth pad |
-
-**Sincronización:** Master (musa-dsl controla el tempo a 110 BPM).
+| Pista | Canal MIDI | Estilo      |
+|-------|------------|-------------|
+| Diatónico | 1 | Clásico     |
+| Jazzy | 2 | Jazzy       |
+| Minimal | 3 | Minimalista |
 
 ## Cadenas de Markov
 
@@ -60,7 +54,7 @@ Markov.new(
   start: 0,           # Estado inicial
   finish: nil,        # Estado final (nil = infinito)
   transitions: {
-    estado => { siguiente1 => prob1, siguiente2 => prob2, ... }
+    estado => { siguiente1 => probabilidad1, siguiente2 => probabilidad2, ... }
   }
 )
 ```
@@ -110,10 +104,10 @@ velocities = S(75).repeat(24)
 # Combinar en serie de hashes
 melody = H(grade: grades, duration: durations, velocity: velocities)
 
-# Reproducir
-play melody do |note|
-  pitch = scale[note[:grade]].pitch
-  voice.note(pitch: pitch, velocity: note[:velocity], duration: note[:duration])
+# Reproducir con keyword destructuring
+play melody do |grade:, duration:, velocity:|
+  pitch = scale[grade].pitch
+  voice.note(pitch, velocity: velocity, duration: duration)
 end
 ```
 
@@ -121,8 +115,9 @@ end
 ```ruby
 on :diatonic do
   # ... crear y reproducir melodía ...
-  control = play melody do |note|
-    # ...
+  control = play melody do |grade:, duration:, velocity:|
+    pitch = scale[grade].pitch
+    voice.note(pitch, velocity: velocity, duration: duration)
   end
 
   # Encadenar a la siguiente sección
@@ -158,7 +153,8 @@ end
 - **H() espera prototipos**: Todas las series pasadas a `H()` deben ser prototipos, no instancias.
 - **Sistema de eventos**: Usar `on :event` / `launch :event` permite encadenar secciones sin tiempos absolutos.
 
-## Próximos pasos
+## Buenas prácticas
 
-- **Demo 06:** Variaciones combinatorias con Variatio
-- **Demo 09:** Selección evolutiva con Darwin
+- **Markov sin `.i` antes de `.max_size()`**: Las cadenas de Markov son prototipos de serie. Aplica `.max_size()` directamente sobre el prototipo, no sobre una instancia. `markov.i.max_size(24)` falla porque `.i` devuelve una instancia que no responde a `.max_size`.
+- **`H()` espera prototipos, no instancias**: Todas las series que pases a `H(grade: ..., duration: ..., velocity: ...)` deben ser prototipos. `H()` se encarga de instanciarlas internamente.
+- **Keyword destructuring en `play`**: Usa `play melody do |grade:, duration:, velocity:| ... end` para extraer campos directamente del hash producido por `H()`.
