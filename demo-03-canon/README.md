@@ -26,35 +26,26 @@ ruby main.rb
 
 ## Configuración DAW
 
-### Puertos MIDI requeridos
+| Puerto | Dirección |
+|--------|-----------|
+| Main | musa-dsl → DAW |
 
-| Puerto | Nombre | Dirección |
-|--------|--------|-----------|
-| Output | `Main` | musa-dsl → DAW |
-
-### Pistas necesarias
-
-| Pista | Canal MIDI | Rol | Instrumento sugerido |
-|-------|------------|-----|---------------------|
-| Dux | 1 | Voz líder | Flauta / Violín |
-| Comes | 2 | Voz seguidora | Oboe / Viola |
-
-### Notas
-
-- La voz Comes está transportada una quinta abajo para mejor armonía
-- El tempo es lento (80 BPM) para apreciar el contrapunto
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Dux | 1 | Voz líder |
+| Comes | 2 | Voz seguidora |
 
 ## Series Buffered
 
 ### Problema que resuelve
 
-Normalmente, una serie solo puede leerse una vez:
+Normalmente, una serie solo puede leerse una vez sin reiniciarla:
 
 ```ruby
 s = S(1, 2, 3).i
 s.next_value  # => 1
 s.next_value  # => 2
-# No hay forma de que otra voz lea los mismos valores
+# No hay forma de que otra voz lea los mismos valores sin llamar a .reset
 ```
 
 ### Solución: .buffered
@@ -78,7 +69,7 @@ reader2.i.next_value  # => 2
 
 - **Canones**: Misma melodía, entradas escalonadas
 - **Fugas**: Sujeto repetido en diferentes voces
-- **Procesos paralelos**: Múltiples consumidores de mismos datos
+- **Procesos paralelos**: Múltiples consumidores de los mismos datos
 
 ## Código clave
 
@@ -92,23 +83,23 @@ melody_comes = melody.buffer
 
 # Dux empieza en beat 1
 at 1 do
-  play melody_dux do |note|
-    pitch = scale[note[:grade]].pitch
-    voice1.note(pitch, velocity: note[:velocity], duration: note[:duration])
+  play melody_dux do |grade:, duration:, velocity:|
+    pitch = scale[grade].pitch
+    voice1.note(pitch, velocity: velocity, duration: duration)
   end
 end
 
 # Comes empieza en beat 2 (1 compás después)
 at 2 do
-  play melody_comes do |note|
+  play melody_comes do |grade:, duration:, velocity:|
     # Transposición: -4 grados = quinta inferior
-    pitch = scale[note[:grade] - 4].pitch
-    voice2.note(pitch, velocity: note[:velocity] - 10, duration: note[:duration])
+    pitch = scale[grade - 4].pitch
+    voice2.note(pitch, velocity: velocity - 10, duration: duration)
   end
 end
 ```
 
-## Próximos pasos
+## Buenas prácticas
 
-- **Demo 04:** Notación textual con Neumas
-- **Demo 07:** Conducción de voces con reglas de contrapunto
+- **`.buffered` + `.buffer` para lecturas paralelas**: Llama `.buffered` sobre el prototipo para crear un buffer compartido, luego `.buffer` para obtener cada reader independiente. Cada reader mantiene su propia posición de lectura.
+- **Keyword destructuring en `play`**: Usa `play serie do |grade:, duration:, velocity:| ... end` para extraer campos directamente, en vez de acceder con `note[:grade]`.

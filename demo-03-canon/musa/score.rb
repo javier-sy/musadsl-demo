@@ -53,9 +53,9 @@ module TheScore
     at 1 do
       puts "[Dux] Melodía principal comienza"
 
-      play melody_dux do |note|
-        pitch = scale[note[:grade]].pitch
-        dux.note(pitch: pitch, velocity: note[:velocity], duration: note[:duration])
+      play melody_dux do |grade:, duration:, velocity:|
+        pitch = scale[grade].pitch
+        dux.note(pitch, velocity: velocity, duration: duration)
       end
     end
 
@@ -66,10 +66,10 @@ module TheScore
     at 2 do
       puts "[Comes] Imitación comienza (1 compás después)"
 
-      comes_control = play melody_comes do |note|
+      comes_control = play melody_comes do |grade:, duration:, velocity:|
         # Transposición: -4 grados = quinta inferior
-        pitch = scale[note[:grade] - 4].pitch
-        comes.note(pitch: pitch, velocity: note[:velocity] - 10, duration: note[:duration])
+        pitch = scale[grade - 4].pitch
+        comes.note(pitch, velocity: velocity - 10, duration: duration)
       end
 
       # ======================================================================
@@ -79,14 +79,14 @@ module TheScore
       comes_control.after do
         puts "[Ambas voces] Cadencia final"
 
-        # Acorde de dominante
-        dux.note(pitch: scale[4].pitch, velocity: 80, duration: 1/2r)
-        comes.note(pitch: scale[7].pitch - 12, velocity: 80, duration: 1/2r)
+        # Acorde de dominante (V): cada voz toca una nota del acorde
+        dux.note(scale[4].pitch, velocity: 80, duration: 1/2r)
+        comes.note(scale[7].pitch - 12, velocity: 80, duration: 1/2r)
 
         wait 1/2r do |_|
-          # Acorde de tónica
-          dux.note(pitch: scale[0].pitch, velocity: 90, duration: 1/2r)
-          comes.note(pitch: scale[0].pitch - 12, velocity: 90, duration: 1/2r)
+          # Acorde de tónica (I): cada voz toca una nota del acorde
+          dux.note(scale[0].pitch, velocity: 90, duration: 1/2r)
+          comes.note(scale[0].pitch - 12, velocity: 90, duration: 1/2r)
 
           wait 1/2r do |_|
             puts "\n¡Canon terminado!"
