@@ -102,9 +102,9 @@ module TheScore
 
         melody = variation_to_series(base_motif, variation, speed_factor)
 
-        control = play melody do |note|
-          pitch = scale[note[:grade]].pitch
-          voice.note(pitch, velocity: note[:velocity], duration: note[:duration] * 0.9)
+        control = play melody do |grade:, duration:, velocity:|
+          pitch = scale[grade].pitch
+          voice.note(pitch, velocity: velocity, duration: duration * 0.9)
         end
 
         control.after { launch :play_variation, index + 1 }

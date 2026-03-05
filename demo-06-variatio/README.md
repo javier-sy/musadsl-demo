@@ -24,19 +24,13 @@ Variatio genera todas las combinaciones posibles de los campos definidos:
 
 ## Configuración DAW
 
-### Puertos MIDI requeridos
+| Puerto | Dirección |
+|--------|-----------|
+| Main | musa-dsl → DAW |
 
-| Puerto | Nombre | Dirección |
-|--------|--------|-----------|
-| Output | (seleccionable) | musa-dsl → DAW |
-
-### Pistas necesarias
-
-| Pista | Canal MIDI | Instrumento sugerido |
-|-------|------------|---------------------|
-| Motivo | 1 | Piano, Cuerdas |
-
-**Sincronización:** Master (musa-dsl controla el tempo a 100 BPM).
+| Pista | Canal MIDI |
+|-------|------------|
+| Motivo | 1 |
 
 ## Variatio API
 
@@ -137,9 +131,9 @@ on :play_variation do
     variation = selected[variation_index]
     melody = variation_to_series(base_motif, variation)
 
-    control = play melody do |note|
-      pitch = scale[note[:grade]].pitch
-      voice.note(pitch, velocity: note[:velocity], duration: note[:duration] * 0.9)
+    control = play melody do |grade:, duration:, velocity:|
+      pitch = scale[grade].pitch
+      voice.note(pitch, velocity: velocity, duration: duration * 0.9)
     end
 
     variation_index += 1
@@ -161,7 +155,7 @@ end
 - **Patrones rítmicos**: Combinar diferentes subdivisiones
 - **Orquestación**: Combinar instrumentos y registros
 
-## Próximos pasos
+## Buenas prácticas
 
-- **Demo 07:** Navegación de escalas y armonía
-- **Demo 09:** Selección evolutiva con Darwin
+- **Keyword destructuring en `play` y `constructor`**: Tanto el `constructor` de Variatio como el bloque de `play` aceptan keyword destructuring. Usa `|grade:, duration:, velocity:|` en vez de acceder por `[:key]`.
+- **`launch :event` para pasar estado entre secciones**: Los eventos con `on`/`launch` permiten encadenar secciones. Para pasar estado (como un índice de variación), usa variables del closure o `launch :event, arg` si necesitas argumentos explícitos.
