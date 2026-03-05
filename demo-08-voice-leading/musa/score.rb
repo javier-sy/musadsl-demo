@@ -1,17 +1,22 @@
 # Demo 08: Voice Leading - Composición
 #
-# Genera progresiones de acordes usando el sistema de Rules
-# con reglas de conducción de voces estilo coral
-# Usa sistema de eventos para encadenar secciones
+# Genera voicings SATB para una progresión con modulación usando
+# dos niveles de Rules.
 #
-# MODELO CORRECTO DE RULES:
-# - Estado = array acumulativo (la melodía/progresión completa hasta ahora)
-# - Cada grow rule = UN paso de transformación
-# - Para N niveles de profundidad, se necesitan N grow rules
-# - combinations retorna PATHS completos con estados intermedios
+# ARQUITECTURA DE DOS NIVELES:
 #
-# IMPORTANTE: Toda la generación de material se realiza ANTES de at 1,
-# para no afectar la temporización durante la ejecución.
+# Nivel 1 (local): genera voicings para UN acorde
+#   - grow 'inversión': posición del acorde (fundamental, 1ª, 2ª)
+#   - grow 'duplicación': qué nota se dobla para 4 voces SATB
+#   - cut: rango SATB, separación entre voces
+#
+# Nivel 2 (progresión): genera secuencias completas de voicings
+#   - Un grow por paso (cada uno semánticamente distinto)
+#   - cut: movimiento máximo, quintas/octavas paralelas, movimiento contrario
+#   - Objeto acumulativo: array que crece con cada paso
+#
+# PROGRESIÓN: C: I - IV - V → G: I - IV - V → C: IV - V - I
+# El V de C es el I de G (acorde pivote para la modulación)
 
 module TheScore
   def score
@@ -21,383 +26,218 @@ module TheScore
     bajo = v(3)
 
     # ========================================================================
-    # FASE 1: GENERACIÓN DE MATERIAL (antes de la temporización)
+    # Nivel 1: Reglas locales de voicing (inversión × duplicación)
     # ========================================================================
 
-    puts "\n=== GENERANDO MATERIAL ==="
+    voicing_rules = Rules.new do
+      grow 'inversión' do |chord|
+        branch chord                                # Posición fundamental
+        branch chord.with_move(root: 1)             # 1ª inversión (3ª en bajo)
+        branch chord.with_move(root: 1, third: 1)   # 2ª inversión (5ª en bajo)
+      end
 
-    # ------------------------------------------------------------------------
-    # Material 1: Melodía con reglas de rango y saltos
-    # ------------------------------------------------------------------------
+      grow 'duplicación' do |chord|
+        branch chord.with_duplicate(root: 1)        # Doblar fundamental arriba
+        branch chord.with_duplicate(root: -1)       # Doblar fundamental abajo
+        branch chord.with_duplicate(fifth: 1)       # Doblar quinta arriba
+      end
 
-    puts "\n[Generando] Melodías con reglas de rango y saltos..."
+      cut 'rango SATB' do |chord|
+        pitches = chord.pitches
+        if pitches.size >= 4
+          prune if pitches[0] < 40 || pitches[0] > 60  # Bajo:    E2–C4
+          prune if pitches[1] < 48 || pitches[1] > 67  # Tenor:   C3–G4
+          prune if pitches[2] < 55 || pitches[2] > 74  # Alto:    G3–D5
+          prune if pitches[3] < 60 || pitches[3] > 81  # Soprano: C4–A5
+        end
+      end
 
-    melody_rules = Rules.new do
-      7.times do
-        grow 'next note' do |melody, max_interval:|
-          last_pitch = melody.last
-          (-max_interval..max_interval).each do |interval|
-            next if interval.zero?
-            branch melody + [last_pitch + interval]
+      cut 'separación voces' do |chord|
+        pitches = chord.pitches
+        if pitches.size >= 4
+          (0...pitches.size - 1).each do |i|
+            prune if pitches[i + 1] - pitches[i] > 12
+          end
+        end
+      end
+    end
+
+    # ========================================================================
+    # Progresión con modulación: C mayor → G mayor → C mayor
+    # ========================================================================
+
+    tuning = Scales.et12[440.0]
+    c_major = tuning.major[48]   # C3 — tríadas en registro medio-bajo
+    g_major = tuning.major[43]   # G2 — para que IV(C3) y V(D3) queden en rango
+
+    progression_steps = [
+      # C mayor: establecer tonalidad
+      { scale: c_major, func: :tonic,       label: "C: I" },
+      { scale: c_major, func: :subdominant, label: "C: IV" },
+      { scale: c_major, func: :dominant,    label: "C: V" },
+      # Modulación a G mayor (V de C = I de G, acorde pivote)
+      { scale: g_major, func: :subdominant, label: "G: IV" },
+      { scale: g_major, func: :dominant,    label: "G: V" },
+      # Vuelta a C mayor
+      { scale: c_major, func: :subdominant, label: "C: IV" },
+      { scale: c_major, func: :dominant,    label: "C: V" },
+      { scale: c_major, func: :tonic,       label: "C: I" },
+    ]
+
+    # ========================================================================
+    # Pre-generar voicings candidatos por paso (Nivel 1)
+    # ========================================================================
+
+    puts "\n=== NIVEL 1: VOICINGS LOCALES ==="
+
+    step_voicings = progression_steps.map do |step|
+      chord = step[:scale].send(step[:func]).chord
+      tree = voicing_rules.apply([chord])
+      voicings = tree.combinations.map(&:last)
+
+      puts "\n  #{step[:label]} (#{step[:func]}): tríada #{chord.pitches}"
+      puts "    #{voicings.size} voicings pasan filtros locales (de 9 candidatos)"
+      voicings.each_with_index do |v, vi|
+        p = v.pitches
+        puts "    [#{vi + 1}] B:#{p[0]} T:#{p[1]} A:#{p[2]} S:#{p[3]}"
+      end
+
+      voicings
+    end
+
+    step_labels = progression_steps.map { |s| s[:label] }
+
+    # ========================================================================
+    # Nivel 2: Reglas de conducción entre acordes (objeto acumulativo)
+    # ========================================================================
+
+    puts "\n=== NIVEL 2: CONDUCCIÓN DE VOCES ==="
+
+    progression_rules = Rules.new do
+      # Un grow por paso — cada uno semánticamente distinto
+      step_labels.each_with_index do |label, i|
+        voicings = step_voicings[i]
+
+        grow "voicing #{label}" do |sequence|
+          voicings.each do |chord|
+            branch sequence + [chord.pitches]
           end
         end
       end
 
-      cut 'range limit' do |melody|
-        prune if melody.last < 60 || melody.last > 79
-      end
+      # Cuts sobre el objeto acumulativo
 
-      cut 'no immediate repeat' do |melody|
-        prune if melody.size >= 2 && melody[-1] == melody[-2]
-      end
-
-      cut 'no consecutive leaps' do |melody|
-        if melody.size >= 3
-          prev_interval = (melody[-2] - melody[-3]).abs
-          curr_interval = (melody[-1] - melody[-2]).abs
-          prune if prev_interval > 4 && curr_interval > 4
+      cut 'movimiento máximo' do |sequence|
+        if sequence.size >= 2
+          curr = sequence[-1]
+          prev = sequence[-2]
+          total = curr.zip(prev).sum { |c, p| (c - p).abs }
+          prune if total > 24
         end
       end
 
-      ended_when do |melody|
-        melody.size == 8
-      end
-    end
-
-    initial_pitch = scale.tonic.pitch
-    tree = melody_rules.apply([[initial_pitch]], max_interval: 3)
-    all_melodies = tree.combinations.map(&:last)
-    selected_melody = all_melodies.sample
-
-    puts "  #{all_melodies.size} melodías válidas"
-    puts "  Seleccionada: #{selected_melody}" if selected_melody
-
-    # ------------------------------------------------------------------------
-    # Material 2: Progresión de acordes con funciones armónicas
-    # ------------------------------------------------------------------------
-
-    puts "\n[Generando] Progresiones armónicas..."
-
-    chord_rules = Rules.new do
-      5.times do
-        grow 'chord progression' do |progression|
-          last_chord = progression.last
-          next_chords = case last_chord
-            when :I then [:ii, :IV, :V, :vi]
-            when :ii then [:V, :vii]
-            when :IV then [:I, :V, :ii]
-            when :V then [:I, :vi]
-            when :vi then [:ii, :IV]
-            when :vii then [:I]
-            else []
-          end
-          next_chords.each { |chord| branch progression + [chord] }
-        end
-      end
-
-      cut 'no immediate repeat' do |progression|
-        prune if progression.size >= 2 && progression[-1] == progression[-2]
-      end
-
-      cut 'no consecutive dominants' do |progression|
-        if progression.size >= 2
-          dominant_chords = [:V, :vii]
-          prune if dominant_chords.include?(progression[-1]) &&
-                   dominant_chords.include?(progression[-2])
-        end
-      end
-
-      ended_when do |progression|
-        progression.size >= 4 && progression.last == :I
-      end
-    end
-
-    tree = chord_rules.apply([[:I]])
-    all_progressions = tree.combinations.map(&:last).select { |p| p.size >= 4 && p.size <= 6 }
-    selected_progression = all_progressions.sample
-
-    puts "  #{all_progressions.size} progresiones válidas"
-    puts "  Seleccionada: #{selected_progression&.join(' - ')}" if selected_progression
-
-    # Mapeo de símbolos a funciones armónicas
-    symbol_to_function = {
-      I: :tonic,
-      ii: :supertonic,
-      IV: :subdominant,
-      V: :dominant,
-      vi: :submediant,
-      vii: :leading
-    }
-
-    # ------------------------------------------------------------------------
-    # Material 3: Conducción de voces con movimiento mínimo
-    # ------------------------------------------------------------------------
-
-    puts "\n[Generando] Conducciones de voces..."
-
-    vl_scale = Scales.et12[440.0].major[60]
-    chord_sequence = [:tonic, :supertonic, :subdominant, :dominant, :tonic]
-    progression_chords = chord_sequence.map { |func| vl_scale.send(func).chord.pitches }
-
-    puts "  Progresión base:"
-    chord_sequence.each_with_index do |func, i|
-      puts "    #{i}: #{func} -> #{progression_chords[i]}"
-    end
-
-    voice_leading_rules = Rules.new do
-      4.times do |step|
-        grow "voicing step #{step}" do |states|
-          last_state = states.last
-          next_chord_index = last_state[:chord_index] + 1
-
-          if next_chord_index < progression_chords.size
-            target_pitches = progression_chords[next_chord_index]
-
-            [0, 12].each do |offset|
-              new_pitches = target_pitches.map { |p| p + offset }
-              branch states + [{ pitches: new_pitches, chord_index: next_chord_index }]
+      cut 'quintas paralelas' do |sequence|
+        if sequence.size >= 2
+          curr = sequence[-1]
+          prev = sequence[-2]
+          (0..3).to_a.combination(2).each do |i, j|
+            curr_int = (curr[j] - curr[i]) % 12
+            prev_int = (prev[j] - prev[i]) % 12
+            if curr_int == 7 && prev_int == 7
+              dir_i = curr[i] <=> prev[i]
+              dir_j = curr[j] <=> prev[j]
+              prune if dir_i == dir_j && dir_i != 0
             end
           end
         end
       end
 
-      cut 'max voice movement' do |states|
-        if states.size >= 2
-          current_pitches = states[-1][:pitches]
-          prev_pitches = states[-2][:pitches]
-
-          total_movement = current_pitches.zip(prev_pitches).sum do |curr, prev|
-            (curr - prev).abs
-          end
-
-          prune if total_movement > 24
-        end
-      end
-
-      ended_when do |states|
-        states.size == 5
-      end
-    end
-
-    initial_state = [{ pitches: progression_chords[0], chord_index: 0 }]
-    tree = voice_leading_rules.apply([initial_state])
-    all_voicings = tree.combinations.map(&:last)
-    selected_voicing = all_voicings.sample
-
-    puts "  #{all_voicings.size} conducciones válidas"
-    if selected_voicing
-      puts "  Seleccionada:"
-      selected_voicing.each_with_index { |s, i| puts "    #{i}: #{s[:pitches]}" }
-    end
-
-    # ------------------------------------------------------------------------
-    # Material 4: Contrapunto simple a dos voces
-    # ------------------------------------------------------------------------
-
-    puts "\n[Generando] Contrapuntos..."
-
-    cp_scale = Scales.et12[440.0].major[60]
-    cantus_grades = [0, 1, 2, 3, 4, 3, 2, 1, 0]
-    cantus = cantus_grades.map { |g| cp_scale[g].pitch }
-
-    puts "  Cantus firmus (grados #{cantus_grades}): #{cantus}"
-
-    counterpoint_rules = Rules.new do
-      8.times do
-        grow 'add counterpoint note' do |cp_notes|
-          current_index = cp_notes.size
-          cf_pitch = cantus[current_index]
-          prev_cp = cp_notes.last
-
-          consonant_intervals = [3, 4, 7, 8, 9, 12]
-          consonant_intervals.each do |interval|
-            new_pitch = cf_pitch + interval
-            if (new_pitch - prev_cp).abs <= 7
-              branch cp_notes + [new_pitch]
-            end
-
-            new_pitch = cf_pitch - interval
-            if new_pitch >= 48 && (new_pitch - prev_cp).abs <= 7
-              branch cp_notes + [new_pitch]
-            end
+      # Si una voz bajó, debe subir o mantenerse; si subió, debe bajar o mantenerse
+      cut 'movimiento contrario' do |sequence|
+        if sequence.size >= 3
+          curr = sequence[-1]
+          prev = sequence[-2]
+          prev2 = sequence[-3]
+          (0..3).each do |i|
+            prev_dir = prev[i] <=> prev2[i]
+            curr_dir = curr[i] <=> prev[i]
+            prune if prev_dir == -1 && curr_dir == -1  # bajó dos veces
+            prune if prev_dir == 1 && curr_dir == 1    # subió dos veces
           end
         end
       end
 
-      cut 'no parallel fifths' do |cp_notes|
-        if cp_notes.size >= 2
-          curr_index = cp_notes.size - 1
-          prev_index = curr_index - 1
-
-          cf_current = cantus[curr_index]
-          cf_prev = cantus[prev_index]
-          cp_current = cp_notes[curr_index]
-          cp_prev = cp_notes[prev_index]
-
-          interval_curr = (cp_current - cf_current) % 12
-          interval_prev = (cp_prev - cf_prev) % 12
-
-          prune if interval_curr == 7 && interval_prev == 7
-        end
-      end
-
-      ended_when do |cp_notes|
-        cp_notes.size == cantus.size
-      end
-    end
-
-    initial_cp_pitch = cp_scale[2].pitch
-    tree = counterpoint_rules.apply([[initial_cp_pitch]])
-    all_counterpoints = tree.combinations.map(&:last)
-    selected_counterpoint = all_counterpoints.sample
-
-    puts "  #{all_counterpoints.size} contrapuntos válidos"
-    puts "  Seleccionado: #{selected_counterpoint}" if selected_counterpoint
-
-    # ------------------------------------------------------------------------
-    # Preparar Series (PDV individuales y Steps AbsD para contenedores)
-    # ------------------------------------------------------------------------
-
-    # Melodía: serie de PDV para soprano
-    melody_pdvs = selected_melody.map do |pitch|
-      { pitch: pitch, velocity: 75, duration: 1/8r }
-    end
-
-    # Progresión: cada acorde genera 4 PDVs (bajo, tenor, alto, soprano)
-    progression_steps = selected_progression.map do |chord_symbol|
-      func_name = symbol_to_function[chord_symbol]
-      root_note = scale.send(func_name)
-      pitches = root_note.chord.pitches
-      {
-        duration: 1/2r,  # duración del paso armónico
-        symbol: chord_symbol,
-        func_name: func_name,
-        bajo:    { pitch: root_note.pitch - 12, velocity: 70, duration: 1/2r },
-        tenor:   { pitch: pitches[0], velocity: 65, duration: 3/8r },
-        alto:    { pitch: pitches[1], velocity: 65, duration: 3/8r },
-        soprano: { pitch: pitches[2], velocity: 70, duration: 3/8r }
-      }.extend(Musa::Datasets::AbsD)
-    end
-
-    # Conducción de voces: cada estado genera 4 PDVs
-    voicing_steps = selected_voicing.map do |state|
-      pitches = state[:pitches]
-      {
-        duration: 1/2r,  # duración del paso
-        bajo:    { pitch: pitches[0] - 12, velocity: 70, duration: 1/2r },
-        tenor:   { pitch: pitches[0], velocity: 65, duration: 3/8r },
-        alto:    { pitch: pitches[1], velocity: 65, duration: 3/8r },
-        soprano: { pitch: pitches[2], velocity: 70, duration: 3/8r }
-      }.extend(Musa::Datasets::AbsD)
-    end
-
-    # Contrapunto: pares de PDV (cantus firmus + contrapunto)
-    counterpoint_steps = cantus.zip(selected_counterpoint).map do |cf_pitch, cp_pitch|
-      {
-        duration: 1/4r,  # duración del paso
-        cf: { pitch: cf_pitch, velocity: 70, duration: 1/4r },
-        cp: { pitch: cp_pitch, velocity: 75, duration: 1/4r }
-      }.extend(Musa::Datasets::AbsD)
-    end
-
-    puts "\n=== MATERIAL GENERADO, INICIANDO REPRODUCCIÓN ===\n"
-
-    # ========================================================================
-    # FASE 2: REPRODUCCIÓN (usando Series con play)
-    # ========================================================================
-
-    # ------------------------------------------------------------------------
-    # Sección 1: Melodía
-    # ------------------------------------------------------------------------
-
-    on :play_melody do
-      melody_serie = S(*melody_pdvs)
-
-      control = play melody_serie do |pdv|
-        soprano.note(**pdv)
-      end
-
-      control.after do
-        wait 1/8r do
-          puts "\n[Sección 2] Progresión armónica"
-          launch :play_progression
+      cut 'octavas paralelas' do |sequence|
+        if sequence.size >= 2
+          curr = sequence[-1]
+          prev = sequence[-2]
+          (0..3).to_a.combination(2).each do |i, j|
+            curr_int = (curr[j] - curr[i]) % 12
+            prev_int = (prev[j] - prev[i]) % 12
+            if curr_int == 0 && prev_int == 0
+              dir_i = curr[i] <=> prev[i]
+              dir_j = curr[j] <=> prev[j]
+              prune if dir_i == dir_j && dir_i != 0
+            end
+          end
         end
       end
     end
 
-    # ------------------------------------------------------------------------
-    # Sección 2: Progresión armónica
-    # ------------------------------------------------------------------------
+    tree = progression_rules.apply([[]])
+    progressions = tree.combinations.map(&:last)
 
-    on :play_progression do
-      progression_serie = S(*progression_steps)
+    puts "\n  #{progressions.size} progresiones completas con conducción válida"
 
-      control = play progression_serie do |chord|
-        puts "  #{chord[:symbol]} (#{chord[:func_name]})"
-
-        bajo.note(**chord[:bajo])
-        tenor.note(**chord[:tenor])
-        alto.note(**chord[:alto])
-        soprano.note(**chord[:soprano])
+    if progressions.any?
+      puts "\n  Progresión elegida (1 de #{progressions.size}):"
+      selected = progressions.first
+      selected.each_with_index do |pitches, i|
+        puts "    #{step_labels[i]}: B:#{pitches[0]} T:#{pitches[1]} A:#{pitches[2]} S:#{pitches[3]}"
       end
 
-      control.after do
-        wait 1/2r do
-          puts "\n[Sección 3] Conducción de voces"
-          launch :play_voicing
+      # ========================================================================
+      # Reproducción
+      # ========================================================================
+
+      puts "\n=== INICIANDO REPRODUCCIÓN ===\n"
+
+      steps = selected.each_with_index.map do |pitches, i|
+        {
+          duration: 1r,
+          label: step_labels[i],
+          bajo:    { pitch: pitches[0], velocity: 70, duration: 1r },
+          tenor:   { pitch: pitches[1], velocity: 65, duration: 3/4r },
+          alto:    { pitch: pitches[2], velocity: 65, duration: 3/4r },
+          soprano: { pitch: pitches[3], velocity: 70, duration: 3/4r }
+        }.extend(Musa::Datasets::AbsD)
+      end
+
+      at 1 do
+        serie = S(*steps)
+
+        control = play serie do |step|
+          puts "  #{step[:label]}: B:#{step[:bajo][:pitch]} T:#{step[:tenor][:pitch]} " \
+               "A:#{step[:alto][:pitch]} S:#{step[:soprano][:pitch]}"
+          bajo.note(**step[:bajo])
+          tenor.note(**step[:tenor])
+          alto.note(**step[:alto])
+          soprano.note(**step[:soprano])
+        end
+
+        control.after do
+          wait 1r do
+            puts "\n=== Demo de Voice Leading terminada! ==="
+            transport.stop
+          end
         end
       end
-    end
-
-    # ------------------------------------------------------------------------
-    # Sección 3: Conducción de voces
-    # ------------------------------------------------------------------------
-
-    on :play_voicing do
-      voicing_serie = S(*voicing_steps)
-
-      control = play voicing_serie do |voices|
-        bajo.note(**voices[:bajo])
-        tenor.note(**voices[:tenor])
-        alto.note(**voices[:alto])
-        soprano.note(**voices[:soprano])
+    else
+      puts "\n  ⚠ No se encontraron progresiones válidas"
+      at 1 do
+        puts "Sin material para reproducir"
+        transport.stop
       end
-
-      control.after do
-        wait 1/2r do
-          puts "\n[Sección 4] Contrapunto"
-          launch :play_counterpoint
-        end
-      end
-    end
-
-    # ------------------------------------------------------------------------
-    # Sección 4: Contrapunto
-    # ------------------------------------------------------------------------
-
-    on :play_counterpoint do
-      counterpoint_serie = S(*counterpoint_steps)
-
-      control = play counterpoint_serie do |pair|
-        bajo.note(**pair[:cf])
-        soprano.note(**pair[:cp])
-      end
-
-      control.after do
-        wait 1/4r do
-          puts "\n=== Demo de Voice Leading terminada! ==="
-          transport.stop
-        end
-      end
-    end
-
-    # ------------------------------------------------------------------------
-    # Inicio
-    # ------------------------------------------------------------------------
-
-    at 1 do
-      puts "\n[Sección 1] Melodía"
-      launch :play_melody
     end
   end
 end

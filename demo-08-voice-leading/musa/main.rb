@@ -22,6 +22,7 @@ include Musa::MIDIVoices
 # Configuración MIDI
 # ============================================================================
 
+puts "Selecciona el puerto MIDI de salida (notas hacia el DAW):"
 output = MIDICommunications::Output.gets
 
 # ============================================================================

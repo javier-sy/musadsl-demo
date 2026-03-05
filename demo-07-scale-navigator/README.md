@@ -4,7 +4,7 @@
 
 ## Descripción
 
-Exploración completa del sistema de escalas de musa-dsl: tipos de escalas, modos griegos, escalas exóticas, construcción de acordes y modulación entre tonalidades.
+Exploración del sistema de escalas de musa-dsl: modos griegos, escalas exóticas, construcción de acordes con funciones armónicas e índices extendidos.
 
 ## Ejecutar
 
@@ -16,34 +16,29 @@ ruby main.rb
 
 ## Secciones
 
-La demo usa el sistema de eventos (`on`/`launch`) para encadenar 4 secciones:
+La demo usa el sistema de eventos (`on`/`launch`) para encadenar 3 secciones:
 
-### 1. Modos griegos (`:greek_modes`)
-Los 7 modos construidos sobre Do, destacando Mayor (Jónico) y Menor (Eólico):
-- Jónico (Mayor) ★
+### 1. Escalas y modos (`:scales`)
+9 escalas construidas sobre Do, incluyendo modos griegos y escalas exóticas:
+- Mayor (Jónico) ★
 - Dórico
 - Frigio
 - Lidio
 - Mixolidio
-- Eólico (Menor) ★
+- Menor (Eólico) ★
 - Locrio
-
-Cada modo muestra la escala completa (8 notas) seguida de su acorde tónica.
-
-### 2. Escalas exóticas (`:exotic_scales`)
 - Húngara menor
-- Tonos enteros (Whole tone)
-- Disminuida (half-whole)
+- Tonos enteros
 
-Patrón melódico ascendente-descendente con bajo pedal.
+Cada escala muestra sus grados completos seguidos de su acorde tónica. El número de grados se adapta automáticamente (7 para diatónicas, 6 para tonos enteros).
 
-### 3. Progresión armónica (`:harmonic_progression`)
+### 2. Progresión armónica (`:harmonic_progression`)
 Progresión I - IV - V7 - I (cadencia perfecta) usando:
-- `scale.tonic.chord` - Tríada de tónica
-- `scale.subdominant.chord` - Tríada de subdominante
-- `scale.dominant.chord(:seventh)` - Acorde de séptima de dominante
+- `scale.tonic.chord` — Tríada de tónica
+- `scale.subdominant.chord` — Tríada de subdominante
+- `scale.dominant.chord(:seventh)` — Acorde de séptima de dominante
 
-### 4. Índices extendidos (`:extended_navigation`)
+### 3. Índices extendidos (`:extended_navigation`)
 Demuestra que `scale[n]` acepta cualquier entero:
 - Índices negativos (-2, -1) → octavas inferiores
 - Índices > 6 (7, 8, 9) → octavas superiores
@@ -64,14 +59,10 @@ Demuestra que `scale[n]` acepta cualquier entero:
 
 ### Crear una escala
 ```ruby
-# Escala mayor desde C4 (MIDI 60)
-scale = Scales.et12[440.0].major[60]
-
-# Escala menor desde A3 (MIDI 57)
-scale = Scales.et12[440.0].minor[57]
-
-# Modo dórico desde D4 (MIDI 62)
-scale = Scales.et12[440.0].dorian[62]
+scale = Scales.et12[440.0].major[60]      # Do Mayor (MIDI 60)
+scale = Scales.et12[440.0].minor[57]      # La menor (MIDI 57)
+scale = Scales.et12[440.0].dorian[62]     # Re Dórico (MIDI 62)
+scale = Scales.et12[440.0].send(:lydian)  # Acceso dinámico por símbolo
 ```
 
 ### Acceder a grados
@@ -80,19 +71,15 @@ scale = Scales.et12[440.0].major[60]
 
 # Por índice numérico
 scale[0].pitch   # => 60 (Do)
-scale[1].pitch   # => 62 (Re)
 scale[4].pitch   # => 67 (Sol)
 scale[7].pitch   # => 72 (Do octava superior)
 
 # Por función armónica
 scale.tonic.pitch       # => 60 (I)
-scale.supertonic.pitch  # => 62 (II)
 scale.dominant.pitch    # => 67 (V)
-scale[:I].pitch         # => 60 (alternativa por símbolo)
-scale[:V].pitch         # => 67
 
-# Número de grados de la escala
-scale.kind.class.grades # => 7 (escalas diatónicas)
+# Número de grados
+scale.kind.class.grades # => 7
 
 # Índices negativos y extendidos
 scale[-1].pitch  # => 59 (Si, debajo de la tónica)
@@ -101,113 +88,55 @@ scale[8].pitch   # => 74 (Re, segunda octava)
 
 ### Tipos de escalas disponibles
 ```ruby
-# Escalas básicas
-.major          # Mayor (Jónico)
-.minor          # Menor natural (Eólico)
-.harmonic_minor # Menor armónica
-.melodic_minor  # Menor melódica
+# Básicas
+.major, .minor, .minor_harmonic, .major_harmonic
 
 # Modos griegos
-.dorian         # Dórico
-.phrygian       # Frigio
-.lydian         # Lidio
-.mixolydian     # Mixolidio
-.locrian        # Locrio
+.dorian, .phrygian, .lydian, .mixolydian, .locrian
 
-# Pentatónicas
-.pentatonic_major
-.pentatonic_minor
-
-# Jazz/Blues
-.blues
-.bebop
+# Pentatónicas y blues
+.pentatonic_major, .pentatonic_minor, .blues, .blues_major
 
 # Simétricas
-.whole_tone     # Tonos enteros
-.diminished     # Disminuida (tono-semitono)
-.chromatic      # Cromática
+.whole_tone, .diminished, .chromatic
 
 # Exóticas
-.hungarian_minor
-.byzantine
-.japanese
-# ... y más
+.hungarian_minor, .byzantine, .japanese  # y más
 ```
 
-### Construcción de acordes (API de acordes)
+### Construcción de acordes
 ```ruby
 scale = Scales.et12[440.0].major[60]
 
 # Tríada de tónica (I)
-chord_I = scale.tonic.chord
-chord_I.pitches  # => [60, 64, 67] (Do-Mi-Sol)
-
-# Tríada de dominante (V)
-chord_V = scale.dominant.chord
-chord_V.pitches  # => [67, 71, 74] (Sol-Si-Re)
+scale.tonic.chord.pitches        # => [60, 64, 67]
 
 # Séptima de dominante (V7)
-v7 = scale.dominant.chord(:seventh, allow_chromatic: false)
-v7.pitches  # => [67, 71, 74, 77] (Sol-Si-Re-Fa)
+scale.dominant.chord(:seventh, allow_chromatic: false).pitches
+# => [67, 71, 74, 77]
 
-# Acceso a notas individuales del acorde
-chord_I.root.pitch   # => 60
-chord_I.third.pitch  # => 64
-chord_I.fifth.pitch  # => 67
-
-# Duplicar notas (para voicing)
-chord_with_octave = chord_I.duplicate(root: 1)
-chord_with_octave.pitches  # Incluye raíz duplicada octava arriba
-
-# Progresión usando funciones armónicas
+# Progresión dinámica con funciones armónicas
 [:tonic, :subdominant, :dominant, :tonic].each do |func|
-  root_note = scale.send(func)
-  chord = root_note.chord
-  bass = root_note.pitch - 12
+  chord = scale.send(func).chord
   puts "#{func}: #{chord.pitches}"
 end
 ```
 
-### Modulación (usando funciones armónicas)
-```ruby
-# Escala base para definir relaciones
-base_scale = Scales.et12[440.0].major[60]  # Do Mayor
+## Funciones armónicas
 
-# Ciclo de quintas: I -> V -> II -> I
-modulations = [:tonic, :dominant, :supertonic, :tonic]
-
-modulations.each do |func|
-  # Obtener centro tonal desde función armónica
-  tonal_center = base_scale.send(func)
-  new_scale = Scales.et12[440.0].major[tonal_center.pitch]
-  puts "#{func}: pitch #{tonal_center.pitch}"
-  # tonic: 60 (Do), dominant: 67 (Sol), supertonic: 62 (Re)
-end
-```
-
-## Conceptos musicales
-
-### Modos griegos
-Los 7 modos se construyen empezando la escala mayor desde cada grado:
-- **Jónico** (I): Mayor natural
-- **Dórico** (II): Menor con 6ª mayor
-- **Frigio** (III): Menor con 2ª menor (sonido español)
-- **Lidio** (IV): Mayor con 4ª aumentada (sonido brillante)
-- **Mixolidio** (V): Mayor con 7ª menor (sonido blues/rock)
-- **Eólico** (VI): Menor natural
-- **Locrio** (VII): Disminuido (inestable)
-
-### Funciones armónicas
-- **Tónica (I)** `scale.tonic`: Reposo, resolución
-- **Supertónica (II)** `scale.supertonic`: Movimiento hacia subdominante
-- **Mediante (III)** `scale.mediant`: Función tónica secundaria
-- **Subdominante (IV)** `scale.subdominant`: Movimiento, preparación
-- **Dominante (V)** `scale.dominant`: Tensión, necesidad de resolver
-- **Submediante (VI)** `scale.submediant`: Función tónica sustituta
-- **Sensible (VII)** `scale.leading_tone`: Tensión hacia tónica
+| Función | Método | Grado |
+|---------|--------|-------|
+| Tónica | `scale.tonic` | I |
+| Supertónica | `scale.supertonic` | II |
+| Mediante | `scale.mediant` | III |
+| Subdominante | `scale.subdominant` | IV |
+| Dominante | `scale.dominant` | V |
+| Submediante | `scale.submediant` | VI |
+| Sensible | `scale.leading_tone` | VII |
 
 ## Buenas prácticas
 
 - **`scale.send(func).chord` para progresiones dinámicas**: Usa `scale.send(:tonic)`, `scale.send(:dominant)`, etc. para construir progresiones a partir de arrays de símbolos. Esto permite parametrizar la armonía sin hardcodear acordes.
 - **`.chord(:seventh)` para extensiones**: Llama `.chord(:seventh)` sobre cualquier grado para obtener un acorde de séptima. La calidad (mayor, menor, dominante) se deduce automáticamente del grado en la escala.
 - **Índices negativos/extendidos en `scale[n]`**: `scale[-1]` accede al grado inferior a la tónica, `scale[7]` al primer grado de la octava superior. No hay límite — musa-dsl extrapola automáticamente a cualquier octava.
+- **`scale.kind.class.grades` para escalas de tamaño variable**: No asumas 7 grados — las pentatónicas tienen 5, tonos enteros 6, cromática 12. Usa `.grades` para iterar correctamente cualquier escala.
