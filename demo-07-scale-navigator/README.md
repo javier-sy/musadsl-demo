@@ -50,23 +50,15 @@ Demuestra que `scale[n]` acepta cualquier entero:
 
 ## Configuración DAW
 
-### Puertos MIDI requeridos
+| Puerto | Dirección |
+|--------|-----------|
+| Main | musa-dsl → DAW |
 
-| Puerto | Nombre | Dirección |
-|--------|--------|-----------|
-| Output | `Main` | musa-dsl → DAW |
-
-### Pistas necesarias
-
-| Pista | Canal MIDI | Instrumento sugerido |
-|-------|------------|---------------------|
-| Melodía | 1 | Piano, Flauta |
-| Acordes | 2 | Strings, Pad |
-| Bajo | 3 | Contrabajo, Synth Bass |
-
-**Pistas a crear:** 3 pistas MIDI (melodía + armonía + bajo).
-
-**Sincronización:** Master (musa-dsl controla el tempo a 80 BPM).
+| Pista | Canal MIDI |
+|-------|------------|
+| Melodía | 1 |
+| Acordes | 2 |
+| Bajo | 3 |
 
 ## API de Escalas
 
@@ -214,7 +206,8 @@ Los 7 modos se construyen empezando la escala mayor desde cada grado:
 - **Submediante (VI)** `scale.submediant`: Función tónica sustituta
 - **Sensible (VII)** `scale.leading_tone`: Tensión hacia tónica
 
-## Próximos pasos
+## Buenas prácticas
 
-- **Demo 08:** Voice Leading - Conducción de voces con reglas
-- **Demo 09:** Darwin - Selección evolutiva de motivos
+- **`scale.send(func).chord` para progresiones dinámicas**: Usa `scale.send(:tonic)`, `scale.send(:dominant)`, etc. para construir progresiones a partir de arrays de símbolos. Esto permite parametrizar la armonía sin hardcodear acordes.
+- **`.chord(:seventh)` para extensiones**: Llama `.chord(:seventh)` sobre cualquier grado para obtener un acorde de séptima. La calidad (mayor, menor, dominante) se deduce automáticamente del grado en la escala.
+- **Índices negativos/extendidos en `scale[n]`**: `scale[-1]` accede al grado inferior a la tónica, `scale[7]` al primer grado de la octava superior. No hay límite — musa-dsl extrapola automáticamente a cualquier octava.
