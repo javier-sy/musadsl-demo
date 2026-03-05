@@ -4,9 +4,19 @@
 
 ## Descripción
 
-Pieza compuesta usando el sistema de notación **Neuma** de musa-dsl. Neuma permite escribir música de forma compacta y legible usando texto.
+Pieza compuesta usando el sistema de notación **Neumalang** de musa-dsl. Neumalang permite escribir música de forma compacta y legible usando texto.
 
 Este demo también introduce el **sistema de eventos** para encadenar secciones musicales.
+
+## Configuración DAW
+
+| Puerto | Dirección |
+|--------|-----------|
+| Main | musa-dsl → DAW |
+
+| Pista | Canal MIDI |
+|-------|------------|
+| Melodía | 1 |
 
 ## Ejecutar
 
@@ -16,11 +26,11 @@ bundle install
 ruby main.rb
 ```
 
-## Sintaxis Neuma
+## Sintaxis Neumalang (GDV/GDVd)
 
 ### Formato básico
 ```
-(grado duración dinámica ornamento)
+(grado duración dinámica ornamento otros_atributos)
 ```
 
 ### Grados de escala
@@ -64,9 +74,9 @@ ff  → +3 → ~112 MIDI
 ## Pipeline de conversión
 
 ```
-Neuma String → to_neumas → GDVD Serie → NeumaDecoder → GDV → to_pdv(scale) → PDV (MIDI)
-     ↓              ↓           ↓              ↓           ↓           ↓
-  "(0 1 mf)"    Parser    Diferencial    Absoluto    Conversión   pitch/vel/dur
+Neumalang String → to_neumas → GDVD Serie → NeumaDecoder → GDV → to_pdv(scale) → PDV (MIDI)
+         ↓              ↓           ↓              ↓           ↓           ↓
+      "(0 1 mf)"    Parser    Diferencial    Absoluto    Conversión   pitch/vel/dur
 ```
 
 - **GDVD** (Diferencial): Cambios relativos (`+2` = subir 2 grados)
@@ -80,7 +90,7 @@ Neuma String → to_neumas → GDVD Serie → NeumaDecoder → GDV → to_pdv(sc
 Sin transcriptor, los adornos (`tr`, `mor`, `st`) se ignoran. El transcriptor los expande a notas reales:
 
 ```ruby
-# Crear transcriptor para expandir adornos
+# Crear transcriptor con todas las transcripciones definidas para expandir adornos de Neumalang a MIDI
 transcriptor = Transcription::Transcriptor.new(
   Transcriptors::FromGDV::ToMIDI.transcription_set(duration_factor: 1/4r),
   base_duration: 1/4r,
@@ -89,6 +99,8 @@ transcriptor = Transcription::Transcriptor.new(
 ```
 
 ### El Decoder
+
+El Decoder traduce los grados de escala a las alturas MIDI (asumiendo una escala cromática).
 
 ```ruby
 using Musa::Extension::Neumas
@@ -131,7 +143,7 @@ decoder.base = { grade: 0, octave: 0, duration: 1/4r, velocity: 1 }
 
 ## Sistema de Eventos
 
-Este demo utiliza eventos para encadenar secciones musicales sin tiempos absolutos.
+Esta demo utiliza eventos para encadenar secciones musicales sin tiempos absolutos.
 
 ### Registrar y disparar eventos
 
@@ -179,26 +191,8 @@ end
 3. **Reactivo**: Cada sección reacciona al completarse la anterior
 4. **Modular**: Cada sección es independiente
 
-## Configuración DAW
+## Buenas prácticas
 
-### Puertos MIDI requeridos
-
-| Puerto | Nombre | Dirección |
-|--------|--------|-----------|
-| Output | (seleccionable) | musa-dsl → DAW |
-
-### Pistas necesarias
-
-| Pista | Canal MIDI | Instrumento sugerido |
-|-------|------------|---------------------|
-| Melodía | 1 | Clavecín, Violín, Flauta |
-
-### Notas
-
-- Tempo moderado (72 BPM)
-- Instrumento expresivo recomendado para apreciar las dinámicas
-
-## Próximos pasos
-
-- **Demo 05:** Melodías generativas con Markov
-- **Demo 06:** Variaciones combinatorias con Variatio
+- **`decoder.base` reset entre secciones**: El `NeumaDecoder` mantiene estado (último grado, octava, dinámica). Si una nueva sección empieza "desde cero", resetea con `decoder.base = { grade: 0, octave: 0, duration: 1/4r, velocity: 1 }`.
+- **`using Musa::Extension::Neumas` en cada archivo**: Los refinements de Ruby son de ámbito de archivo. Si `score.rb` usa `.to_neumas`, necesita su propio `using Musa::Extension::Neumas` — no basta con declararlo en `main.rb`.
+- **Transcriptor obligatorio para ornamentos**: Los ornamentos (`tr`, `mor`, `st`, `turn`) se ignoran silenciosamente sin un `Transcriptor`. Siempre crea uno con `Transcriptors::FromGDV::ToMIDI.transcription_set` y pásalo al decoder.
