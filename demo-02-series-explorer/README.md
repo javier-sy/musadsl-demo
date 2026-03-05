@@ -4,7 +4,7 @@
 
 ## Descripción
 
-Exploración auditiva de los diferentes constructores de series de musa-dsl. Cuatro voces entran progresivamente:
+Exploración los diferentes constructores de series de musa-dsl. Cuatro voces entran progresivamente:
 
 - **S()** - Serie de valores literales (melodía fija) - Beat 1
 - **FOR()** - Secuencia numérica (escalas) - Beat 3
@@ -22,31 +22,16 @@ ruby main.rb
 
 ## Configuración DAW
 
-### Puertos MIDI requeridos
+| Puerto | Dirección |
+|--------|-----------|
+| Main | musa-dsl → DAW |
 
-| Puerto | Nombre | Dirección |
-|--------|--------|-----------|
-| Output | `Main` | musa-dsl → DAW |
-
-### Pistas necesarias
-
-| Pista | Canal MIDI | Constructor | Instrumento sugerido |
-|-------|------------|-------------|---------------------|
-| Melodía S | 1 | S() | Piano |
-| Escala FOR | 2 | FOR() | Marimba |
-| Random RND | 3 | RND() | Bells/Celesta |
-| Fibo H | 4 | H()+FIBO() | Bass Synth |
-
-### Diagrama
-
-```
-main.rb (musa-dsl)
-    │
-    ├── Canal 1 ──► Pista "Melodía S"    (Piano)
-    ├── Canal 2 ──► Pista "Escala FOR"   (Marimba)
-    ├── Canal 3 ──► Pista "Random RND"   (Bells)
-    └── Canal 4 ──► Pista "Fibo H"       (Bass)
-```
+| Pista | Canal MIDI | Constructor |
+|-------|------------|-------------|
+| Melodía S | 1 | S() |
+| Escala FOR | 2 | FOR() |
+| Random RND | 3 | RND() |
+| Fibo H | 4 | H()+FIBO() |
 
 ## Constructores demostrados
 
@@ -93,7 +78,8 @@ serie.max_size(16)            # Limitar a 16 elementos
 serie.i                       # Instanciar para consumo
 ```
 
-## Próximos pasos
+## Buenas prácticas
 
-- **Demo 03:** Canon a dos voces usando `.buffered`
-- **Demo 05:** Melodías con cadenas de Markov
+- **Keyword destructuring en `play`**: Usa `play melody do |grade:, duration:, velocity:| ... end` para extraer campos directamente del hash, en vez de `|note|` con `note[:grade]`.
+- **`H()` + `S().repeat` para datasets**: Combina `H(grade: ..., duration: ..., velocity: ...)` para crear series de hashes que `play` consume automáticamente. Usa `S(valor).repeat(n)` para campos constantes.
+- **`control.after` para encadenamiento**: El objeto devuelto por `play` tiene `.after { ... }` para ejecutar código cuando la serie termina. Úsalo para encadenar secciones sin calcular tiempos absolutos.

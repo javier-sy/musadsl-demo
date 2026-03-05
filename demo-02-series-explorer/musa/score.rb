@@ -22,9 +22,9 @@ module TheScore
     at 1 do
       puts "\n[Voz 1] S() - Melodía literal: Do Re Mi Fa Sol Fa Mi Re"
 
-      play melody_s do |note|
-        pitch = scale[note[:grade]].pitch
-        v(0).note(pitch: pitch, velocity: note[:velocity], duration: note[:duration])
+      play melody_s do |grade:, duration:, velocity:|
+        pitch = scale[grade].pitch
+        v(0).note(pitch, velocity: velocity, duration: duration)
       end
     end
 
@@ -45,9 +45,9 @@ module TheScore
     at 3 do
       puts "\n[Voz 2] FOR() - Escala arriba y abajo"
 
-      play scale_pattern do |note|
-        pitch = scale[note[:grade]].pitch
-        v(1).note(pitch: pitch, velocity: note[:velocity], duration: note[:duration])
+      play scale_pattern do |grade:, duration:, velocity:|
+        pitch = scale[grade].pitch
+        v(1).note(pitch, velocity: velocity, duration: duration)
       end
     end
 
@@ -66,9 +66,9 @@ module TheScore
     at 5 do
       puts "\n[Voz 3] RND() - Melodía aleatoria pentatónica"
 
-      play random_melody do |note|
-        pitch = scale[note[:grade]].pitch
-        v(2).note(pitch: pitch, velocity: note[:velocity], duration: note[:duration])
+      play random_melody do |grade:, duration:, velocity:|
+        pitch = scale[grade].pitch
+        v(2).note(pitch, velocity: velocity, duration: duration)
       end
     end
 
@@ -89,9 +89,9 @@ module TheScore
     at 10 do
       puts "\n[Voz 4] H() + FIBO() - Arpegio con ritmos Fibonacci"
 
-      play combined do |note|
-        pitch = scale[note[:grade]].pitch
-        v(3).note(pitch: pitch, velocity: note[:velocity], duration: note[:duration])
+      play combined do |grade:, duration:, velocity:|
+        pitch = scale[grade].pitch
+        v(3).note(pitch, velocity: velocity, duration: duration)
       end
     end
 
@@ -109,11 +109,11 @@ module TheScore
 
       transposed = H(grade: transposed_grades, duration: transposed_dur, velocity: transposed_vel)
 
-      control = play transposed do |note|
+      control = play transposed do |grade:, duration:, velocity:|
         # Tocar en todas las voces como acorde
-        pitch = scale[note[:grade]].pitch
+        pitch = scale[grade].pitch
         4.times do |i|
-          v(i).note(pitch: pitch + (i * 12), velocity: note[:velocity], duration: note[:duration])
+          v(i).note(pitch + (i * 12), velocity: velocity, duration: duration)
         end
       end
 
