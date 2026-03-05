@@ -9,7 +9,10 @@ puts "MusaDSL #{Musa::VERSION}"
 
 # MIDI setup
 
+puts "Selecciona el puerto MIDI de entrada (Clock desde el DAW):"
 clock_input = MIDICommunications::Input.gets
+puts
+puts "Selecciona el puerto MIDI de salida (notas hacia el DAW):"
 output = MIDICommunications::Output.gets
 
 # Transport: 4 beats/bar, 24 ticks/beat

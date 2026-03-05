@@ -8,7 +8,7 @@ Plantilla base para empezar proyectos de composición algorítmica con MusaDSL. 
 
 - Configuración MIDI completa (4 canales)
 - Transcriptor con ornamentos barrocos
-- Hot-reload para live coding
+- Hot-reload para editar el fuente sin reiniciar
 - Proyecto Bitwig Studio preconfigurado
 
 ## Estructura
@@ -37,43 +37,17 @@ ruby main.rb
 
 ## Configuración DAW
 
-### Puertos MIDI requeridos
+| Puerto | Dirección |
+|--------|-----------|
+| Clock | DAW → musa-dsl |
+| Main | musa-dsl → DAW |
 
-| Puerto | Nombre | Dirección | Propósito |
-|--------|--------|-----------|-----------|
-| Clock | `Clock` | DAW → musa-dsl | MIDI Clock, Start/Stop |
-| Main | `Main` | musa-dsl → DAW | Notas MIDI |
-
-### Crear puertos virtuales (macOS)
-
-1. Abrir **Audio MIDI Setup**
-2. Menú **Window → Show MIDI Studio**
-3. Doble-clic en **IAC Driver**
-4. Marcar "Device is online"
-5. Crear dos puertos: `Clock` y `Main`
-
-### Canales MIDI
-
-| Canal MIDI | Instrumento sugerido |
-|------------|---------------------|
-| 1 | Piano, Synth |
-
-**Pistas a crear:** 1 pista MIDI recibiendo en canal 1.
-
-**Nota:** El template tiene 4 canales disponibles (1-4) para cuando amplíes tu composición.
-
-### Configurar MIDI Clock en el DAW
-
-**Bitwig Studio:**
-1. Settings → Controllers → Add "Generic MIDI Clock Transmitter"
-2. MIDI Output: seleccionar puerto `Clock`
-3. Habilitar Send Clock, Start/Stop
-
-**Ableton Live:**
-1. Preferences → Link/Tempo/MIDI
-2. En puerto de salida `Clock`, activar **Sync**
-
-**Sincronización:** SLAVE - El DAW controla el tempo.
+| Pista | Canal MIDI |
+|-------|------------|
+| Melodía | 1          |
+| Melodía | 2          |
+| Melodía | 3          |
+| Melodía | 4          |
 
 ## Uso
 
@@ -92,6 +66,8 @@ module TheScore
     at 1 do
       neuma melody, voice: v(0)
     end
+    
+    # ...
   end
 end
 ```
@@ -143,21 +119,6 @@ scale = Scales.et12[440.0].major[60]
 
 Para cambiar la escala, edita `main.rb`.
 
-## Flujo de señales
-
-```
-┌─────────────┐     MIDI Clock (24 ppqn)    ┌─────────────┐
-│             │ ─────────────────────────── │             │
-│     DAW     │      MIDI Start/Stop        │  musa-dsl   │
-│   (Master)  │ ═══════════════════════════ │   (Slave)   │
-│             │        puerto: Clock        │             │
-│             │                             │             │
-│             │      MIDI Notes             │             │
-│             │ ←────────────────────────── │             │
-│             │        puerto: Main         │             │
-└─────────────┘                             └─────────────┘
-```
-
 ## Personalización
 
 ### Cambiar puertos MIDI
@@ -193,11 +154,11 @@ El directorio `bw/demo/` contiene un proyecto Bitwig Studio preconfigurado:
 
 1. Abrir `bw/demo/demo.bwproject` en Bitwig
 2. Verificar que los puertos MIDI `Clock` y `Main` están conectados
-3. Crear 4 pistas MIDI recibiendo en canales 1-4
+3. Ajustar las 4 pistas MIDI recibiendo en canales 1-4
 4. Presionar PLAY
 
-## Próximos pasos
+## Buenas prácticas
 
-- **Demo 01:** Hello Musa - Primera composición simple
-- **Demo 04:** Neumas - Notación musical avanzada
-- **Demo 12:** DAW Sync - Más sobre sincronización
+- **Hot-reload con `on_start`**: Usa `transport.on_start { load 'score.rb'; extend TheScore; score }` para recargar el score en cada MIDI Start del DAW, permitiendo editar sin reiniciar el script.
+- **`using` refinements por archivo**: `using Musa::Extension::Neumas` debe declararse en cada archivo `.rb` que use `.to_neumas`. Los refinements de Ruby son de ámbito de archivo — declararlo en `main.rb` no lo activa en `score.rb`.
+- **Transcriptor para ornamentos**: Sin un `Transcriptor`, los ornamentos (`tr`, `mor`, `st`, `turn`) se ignoran silenciosamente. Siempre crea un `Transcriptor` y pásalo al `NeumaDecoder` si vas a usar ornamentos.

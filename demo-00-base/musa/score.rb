@@ -7,5 +7,17 @@ module TheScore
     at 1 do
       neuma melody, voice: v(0)
     end
+
+    at 2r do
+      neuma melody, voice: v(1)
+    end
+
+    at 3r do
+      neuma melody, voice: v(2)
+    end
+
+    at 4r do
+      neuma melody, voice: v(3)
+    end
   end
 end
