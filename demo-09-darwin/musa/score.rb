@@ -118,18 +118,18 @@ module TheScore
       measures do |rhythm|
         pattern = rhythm[:pattern]
 
-        quarters = pattern.count { |d| d == 1/8r }
-        eighths = pattern.count { |d| d == 1/16r }
-        sixteenths = pattern.count { |d| d == 1/32r }
+        eighths = pattern.count { |d| d == 1/8r }
+        sixteenths = pattern.count { |d| d == 1/16r }
+        thirty_seconds = pattern.count { |d| d == 1/32r }
 
-        variety = [quarters, eighths, sixteenths].count { |c| c > 0 }
+        variety = [eighths, sixteenths, thirty_seconds].count { |c| c > 0 }
 
         dimension :variety, variety.to_f
         dimension :note_count, pattern.size.to_f
 
         feature :strong_start if pattern.first >= 1/8r
 
-        die if sixteenths > 4
+        die if thirty_seconds > 4
       end
 
       weight variety: 2.0,
@@ -198,12 +198,12 @@ module TheScore
     progression_steps = best_progression[:progression].map do |chord_sym|
       chord = scale[chord_sym].chord
       {
-        duration: 1,
+        duration: 1r,
         symbol: chord_sym,
-        bass: { grade: chord.root.grade, octave: -1, duration: 1, velocity: 0 }.extend(Musa::Datasets::GDV),
+        bass: { grade: chord.root.grade, octave: -1, duration: 1r, velocity: 0 }.extend(Musa::Datasets::GDV),
         chord: chord,
         chord_duration: 7/8r,
-        chord_velocity: -1  # p
+        chord_velocity: 42  # p (MIDI)
       }.extend(Musa::Datasets::AbsD)
     end
 
@@ -243,13 +243,19 @@ module TheScore
     variation_darwin = Darwin.new do
       measures do |var|
         dimension :transpose_balance, -(var[:transpose] - 4).abs.to_f
+        dimension :rhythm_interest, (var[:rhythm].uniq.size.to_f / var[:rhythm].size)
 
         feature :is_legato if var[:articulation] == :legato
         feature :is_syncopated if var[:rhythm_type] == :syncopated
         feature :moderate_transpose if var[:transpose] == 2 || var[:transpose] == 4
+
+        die if var[:articulation] == :staccato && var[:rhythm_type] == :syncopated
+        die if var[:transpose] == 0 && var[:rhythm_type] == :uniform
+        die if var[:transpose] == 7 && var[:articulation] == :staccato
       end
 
       weight transpose_balance: 1.0,
+             rhythm_interest: 1.5,
              is_legato: 2.0,
              is_syncopated: 1.5,
              moderate_transpose: 1.0
@@ -267,7 +273,7 @@ module TheScore
       end
     end
 
-    puts "  Mejores variaciones: #{selected_variations.first(2).map { |v| "#{v[:rhythm_type]}/#{v[:articulation]}" }}"
+    puts "  Mejores variaciones: #{selected_variations.first(2).map { |v| "#{v[:rhythm_type]}/#{v[:articulation]}/+#{v[:transpose]}" }}"
 
     puts "\n=== MATERIAL GENERADO, INICIANDO REPRODUCCIÓN ===\n"
 
@@ -336,7 +342,7 @@ module TheScore
         # Bajo: convertir GDV a PDV
         melody_voice.note(**step[:bass].to_pdv(scale))
         # Acorde: usar API de chords
-        chord_voice.note(pitch: step[:chord].pitches, duration: step[:chord_duration], velocity: 49)
+        chord_voice.note(pitch: step[:chord].pitches, duration: step[:chord_duration], velocity: step[:chord_velocity])
       end
 
       control.after do
@@ -355,7 +361,7 @@ module TheScore
 
       if index < variation_gdvs.size
         var = selected_variations[index]
-        puts "  Variación ##{index + 1}: #{var[:rhythm_type]}/#{var[:articulation]}"
+        puts "  Variación ##{index + 1}: #{var[:rhythm_type]}/#{var[:articulation]}/+#{var[:transpose]}"
         serie = S(*variation_gdvs[index])
 
         control = play serie do |gdv|
