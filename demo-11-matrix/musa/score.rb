@@ -254,7 +254,7 @@ module TheScore
       num_points = 48
       num_turns = 2.5
       base_pitch = 72
-      duration = 6
+      duration = 6r
       pitch_range = 24  # 2 octavas
 
       points = num_points.times.map do |i|
@@ -294,7 +294,7 @@ module TheScore
         timed_serie = p_seq.to_timed_serie(base_duration: 1r)
 
         play_timed timed_serie do |pitches, time:, started_ago:, control:|
-          melody_voice.note(pitches, velocity: 75, duration: 1/16r)
+          melody_voice.note(pitches, velocity: 75, duration: 1/4r)
         end
       end
 

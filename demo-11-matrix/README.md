@@ -20,6 +20,17 @@ bundle install
 ruby main.rb
 ```
 
+## Configuración DAW
+
+| Puerto | Dirección |
+|--------|-----------|
+| Main | musa-dsl → DAW |
+
+| Pista | Canal MIDI |
+|-------|------------|
+| Gestos melódicos | 1 |
+| Acordes/texturas | 2 |
+
 ## Secciones
 
 La demo usa eventos (`on`/`launch`) para encadenar 7 secciones:
@@ -44,25 +55,6 @@ Genera una espiral de Arquímedes en 2D (x, y). Al usar `to_p(time_dimension: 0)
 
 ### 7. Condensación de matrices (`:section_7`)
 Fusión automática de matrices que comparten puntos extremos.
-
-## Configuración DAW
-
-### Puertos MIDI requeridos
-
-| Puerto | Nombre | Dirección |
-|--------|--------|-----------|
-| Output | `Main` | musa-dsl → DAW |
-
-### Pistas necesarias
-
-| Pista | Canal MIDI | Instrumento sugerido |
-|-------|------------|---------------------|
-| Gestos melódicos | 1 | Synth Lead, Piano |
-| Acordes/texturas | 2 | Pad, Strings |
-
-**Pistas a crear:** 2 pistas MIDI.
-
-**Sincronización:** Master (musa-dsl controla el tempo a 90 BPM).
 
 ## API de Matrix
 
@@ -121,89 +113,50 @@ p_with_time = gesture.to_p(time_dimension: 0, keep_time: true)
 ```
 
 ### Transformaciones matriciales
+
+Las transformaciones usan operaciones estándar de `Matrix` de Ruby:
+
 ```ruby
-# Transponer (añadir a columna de pitch)
-transposed = gesture.map.with_index do |val, row, col|
-  col == 1 ? val + 4 : val  # +4 semitonos (tercera mayor)
-end
+original = Matrix[[0r, 60], [1/4r, 64], [1/2r, 67], [3/4r, 64], [1r, 60]]
 
-# Escalar tiempo (multiplicar columna de tiempo)
-augmented = gesture.map.with_index do |val, row, col|
-  col == 0 ? val * 2 : val  # x2 tiempo
-end
+# Transposición: suma de matrices (añadir +4 semitonos a pitch)
+transposed = original + Matrix[*[[0, 4]] * original.row_count]
 
-# Inversión melódica (reflejar pitch)
+# Escalado temporal: producto Hadamard (tiempo x2, pitch x1)
+augmented = original.hadamard_product(Matrix[*[[2, 1]] * original.row_count])
+
+# Disminución: producto Hadamard (tiempo x0.5, pitch x1)
+diminished = original.hadamard_product(Matrix[*[[1/2r, 1]] * original.row_count])
+
+# Inversión melódica: espejo alrededor de un eje
 axis = 60
-inverted = gesture.map.with_index do |val, row, col|
-  col == 1 ? axis - (val - axis) : val
-end
+inverted = Matrix[*[[0, 2 * axis]] * original.row_count] +
+           original.hadamard_product(Matrix[*[[1, -1]] * original.row_count])
 ```
 
-## Operaciones de transformación
+## Polifonía emergente con espiral
 
-### Transposición
+Cuando una matriz "retrocede" en la dimensión de tiempo, `to_p` genera múltiples P sequences — una por cada fragmento que avanza. Esto convierte trayectorias geométricas en polifonía:
+
 ```ruby
-# Añadir intervalo a todos los pitches
-interval = 4  # tercera mayor
-transposed = matrix.map.with_index do |v, r, c|
-  c == pitch_column ? v + interval : v
-end
-```
-
-### Escalado temporal
-```ruby
-# Augmentación: valores de tiempo x factor
-augmented = matrix.map.with_index do |v, r, c|
-  c == time_column ? v * 2 : v
-end
-
-# Disminución
-diminished = matrix.map.with_index do |v, r, c|
-  c == time_column ? v / 2 : v
-end
-```
-
-### Inversión melódica
-```ruby
-# Espejo alrededor de un eje
-axis_pitch = 60
-inverted = matrix.map.with_index do |v, r, c|
-  c == pitch_column ? axis_pitch - (v - axis_pitch) : v
-end
-```
-
-### Retrogradación
-```ruby
-# Invertir orden de filas (tiempo al revés)
-rows = matrix.row_vectors.reverse
-retrograde = Matrix[*rows.map(&:to_a)]
-```
-
-## Generación procedural
-
-### Espiral
-```ruby
-# Generar puntos en espiral
-points = n.times.map do |i|
-  time = i * step
-  pitch = base_pitch + i
-  velocity = 70 + (Math.sin(i * freq) * amplitude).to_i
-  [time, pitch, velocity]
+# Espiral de Arquímedes: x=r*cos(θ), y=r*sin(θ)
+points = num_points.times.map do |i|
+  theta = i * (num_turns * 2 * Math::PI) / num_points
+  r = 1 + theta / (2 * Math::PI)
+  x = r * Math.cos(theta)  # → tiempo (normalizar a Rational)
+  y = r * Math.sin(theta)  # → pitch (normalizar a rango MIDI)
+  [Rational(x_normalized.round(4)), pitch_normalized.round]
 end
 
 spiral = Matrix[*points]
-```
+p_sequences = spiral.to_p(time_dimension: 0)
+# => Múltiples P sequences (una por fragmento que avanza en X)
 
-### Curva Bézier
-```ruby
-# Interpolar entre puntos de control
-def bezier(t, p0, p1, p2, p3)
-  (1-t)**3 * p0 + 3*(1-t)**2*t * p1 + 3*(1-t)*t**2 * p2 + t**3 * p3
-end
-
-points = resolution.times.map do |i|
-  t = i.to_f / resolution
-  [t * duration, bezier(t, 60, 72, 55, 67)]
+# Reproducir todas en paralelo → polifonía emergente
+controls = p_sequences.map do |p_seq|
+  play_timed p_seq.to_timed_serie(base_duration: 1r) do |pitches, **|
+    voice.note(pitches, velocity: 75, duration: 1/16r)
+  end
 end
 ```
 
@@ -245,3 +198,9 @@ timed_serie = p_seq.to_timed_serie(base_duration: 1r)
 **Nota:** Es preferible usar Rational (0r, 1/2r, 1r) para tiempos y duraciones.
 El Sequencer codifica internamente el tiempo como Rational, por lo que usar Float
 puede causar problemas de precisión en la conversión.
+
+## Buenas prácticas
+
+- **Rational para tiempos en Matrix**: Usa siempre `Rational` (`0r`, `1/2r`, `1r`) para la columna de tiempo. El Sequencer trabaja internamente con Rational — usar Float causa errores de precisión en la conversión a timed series.
+- **`using Musa::Extension::Matrix` en cada archivo**: Al igual que con Neumas, el refinement `Matrix` es de ámbito de archivo. Cada archivo `.rb` que use `.to_p()` necesita su propio `using Musa::Extension::Matrix`.
+- **Condensación automática de matrices con puntos compartidos**: Cuando dos matrices comparten un punto extremo (el último punto de una coincide con el primero de la siguiente), `[m1, m2].to_p()` las fusiona automáticamente en una sola P sequence continua.

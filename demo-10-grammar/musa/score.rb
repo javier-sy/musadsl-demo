@@ -80,11 +80,11 @@ module TheScore
 
     puts "\n[Generando] Sección 2: Restricciones con .limit..."
 
-    quarter = N(:q, size: 1/8r)
-    eighth = N(:e, size: 1/16r)
-    half = N(:h, size: 1/4r)
+    eighth = N(:e, size: 1/8r)
+    sixteenth = N(:s, size: 1/16r)
+    quarter = N(:q, size: 1/4r)
 
-    grammar_2 = (quarter | eighth | half).repeat(max: 8).limit { |o|
+    grammar_2 = (eighth | sixteenth | quarter).repeat(max: 8).limit { |o|
       o.collect { |e| e.attributes[:size] }.sum == 1/2r
     }
 
@@ -210,7 +210,7 @@ module TheScore
         puts "  Secuencia #{index + 1}: #{selected_1[index].map(&:content)}"
 
         control = play section_1_series[index] do |gdv|
-          melody_voice.note(**gdv.to_pdv(scale).merge(velocity: 72))
+          melody_voice.note(**gdv.to_pdv(scale))
         end
 
         control.after(1/4r) { launch :play_section_1, index + 1 }
@@ -234,7 +234,7 @@ module TheScore
         puts "  Ritmo #{index + 1}: #{durations.map(&:to_f)}"
 
         control = play S(*section_2_series[index]) do |gdv|
-          melody_voice.note(**gdv.to_pdv(scale).merge(velocity: 70))
+          melody_voice.note(**gdv.to_pdv(scale))
         end
 
         control.after(1/8r) { launch :play_section_2, index + 1 }
@@ -259,7 +259,7 @@ module TheScore
         puts "  Melodía #{index + 1}: #{melody_data[:grades]}"
 
         control = play melody_data[:serie] do |gdv|
-          melody_voice.note(**gdv.to_pdv(scale).merge(velocity: 75))
+          melody_voice.note(**gdv.to_pdv(scale))
         end
 
         control.after(1/4r) { launch :play_section_3, index + 1 }

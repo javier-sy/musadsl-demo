@@ -16,39 +16,30 @@ ruby main.rb
 
 ## Secciones
 
-### 1. Alternación (compases 1-11)
-Gramática simple `(a | b).repeat(4)` que genera todas las combinaciones de Do/Mi en 4 posiciones (16 opciones).
+La demo genera todo el material antes de iniciar la reproducción, luego usa eventos para encadenar secciones.
 
-### 2. Secuencia (compases 12-24)
-Motivos de 2 notas combinados: `(up | down | leap).repeat(3)` genera 27 secuencias posibles.
+### 1. Operadores básicos (`:section_1`)
+Tres motivos de 2 notas (ascendente, descendente, salto) combinados con `(up | down | leap).repeat(3)`. Genera 27 secuencias posibles, reproduce 4 seleccionadas al azar.
 
-### 3. Atributos (compases 25-37)
-Patrones rítmicos con restricción: solo combinaciones que suman exactamente 1 compás.
+### 2. Restricciones con `.limit` (`:section_2`)
+Patrones rítmicos con corcheas, semicorcheas y negras. `.repeat(max: 8).limit { sum == 1/2r }` genera solo combinaciones que suman exactamente medio compás.
 
-### 4. Progresiones armónicas (compases 38-54)
-Gramática de acordes que genera progresiones válidas terminando en cadencia auténtica.
+### 3. Contenido dinámico (`:section_3`)
+Nodos con bloques que generan grados aleatorios dentro de rangos (bajo 0-2, medio 3-4, alto 5-7). Contorno fijo bajo→medio→alto→medio→bajo, contenido diferente en cada generación.
 
-### 5. Contenido dinámico (compases 55-62)
-Nodos con bloques que generan contenido aleatorio dentro de rangos definidos.
+### 4. Gramática recursiva con `PN()` (`:section_4`)
+Progresiones armónicas con modulación. `PN()` permite definir la frase recursivamente: subdominante y dominante pueden modular (expandiendo la frase dentro de la nueva tonalidad). `scale_stack` rastrea la escala actual.
 
 ## Configuración DAW
 
-### Puertos MIDI requeridos
+| Puerto | Dirección |
+|--------|-----------|
+| Main | musa-dsl → DAW |
 
-| Puerto | Nombre | Dirección |
-|--------|--------|-----------|
-| Output | `Main` | musa-dsl → DAW |
-
-### Pistas necesarias
-
-| Pista | Canal MIDI | Instrumento sugerido |
-|-------|------------|---------------------|
-| Melodía | 1 | Piano, Vibraphone |
-| Acordes | 2 | Pad, Strings |
-
-**Pistas a crear:** 2 pistas MIDI.
-
-**Sincronización:** Master (musa-dsl controla el tempo a 110 BPM).
+| Pista | Canal MIDI |
+|-------|------------|
+| Melodía | 1 |
+| Acordes | 2 |
 
 ## API de GenerativeGrammar
 
@@ -165,13 +156,13 @@ end
 
 ### Patrones rítmicos con restricción
 ```ruby
-q = N(:q, size: 1/4r)
 e = N(:e, size: 1/8r)
-h = N(:h, size: 1/2r)
+s = N(:s, size: 1/16r)
+q = N(:q, size: 1/4r)
 
-# Solo patrones que suman 1 compás
-grammar = (q | e | h).repeat.limit { |o|
-  o.collect { |e| e.attributes[:size] }.sum == 1r
+# Solo patrones que suman medio compás
+grammar = (e | s | q).repeat(max: 8).limit { |o|
+  o.collect { |e| e.attributes[:size] }.sum == 1/2r
 }
 
 rhythms = grammar.options(raw: true)
@@ -274,7 +265,8 @@ Proceso de aplicar reglas para generar todas las cadenas posibles.
 - **Forma**: Estructurar secciones con reglas de repetición/contraste
 - **Contrapunto**: Generar líneas que sigan reglas de conducción
 
-## Próximos pasos
+## Buenas prácticas
 
-- **Demo 11:** Matrix - Gestos multidimensionales
-- **Demo 12:** DAW Sync - Sincronización como slave
+- **`PN()` para gramáticas recursivas**: Usa `PN()` (Proxy Node) cuando necesites referencias circulares en la gramática. Define el proxy vacío primero, luego asígnale la gramática con `proxy.node = ...`.
+- **`.limit()` para restricciones métricas**: Combina `.repeat` con `.limit { |o| condición }` para generar solo las combinaciones que cumplen una restricción (ej: duraciones que suman exactamente 1 compás).
+- **`scale_stack` para modulaciones**: Cuando una gramática genera modulaciones, usa un array como stack para rastrear la escala actual. Push al modular, pop al demodular.

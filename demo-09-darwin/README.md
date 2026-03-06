@@ -14,6 +14,17 @@ bundle install
 ruby main.rb
 ```
 
+## Configuración DAW
+
+| Puerto | Dirección |
+|--------|-----------|
+| Main | musa-dsl → DAW |
+
+| Pista | Canal MIDI |
+|-------|------------|
+| Melodía | 1 |
+| Acordes | 2 |
+
 ## Secciones
 
 La demo genera todo el material antes de iniciar la reproducción, luego usa eventos para encadenar secciones.
@@ -37,26 +48,10 @@ La demo genera todo el material antes de iniciar la reproducción, luego usa eve
 - **Salida**: La mejor progresión
 
 ### 4. Darwin + Variatio (`:play_variations`)
-Combina Variatio para generar 24 variaciones (4 × 3 × 2) y Darwin para seleccionar las mejores según equilibrio de transposición y articulación legato.
-
-## Configuración DAW
-
-### Puertos MIDI requeridos
-
-| Puerto | Nombre | Dirección |
-|--------|--------|-----------|
-| Output | `Main` | musa-dsl → DAW |
-
-### Pistas necesarias
-
-| Pista | Canal MIDI | Instrumento sugerido |
-|-------|------------|---------------------|
-| Melodía | 1 | Piano, Marimba |
-| Acordes | 2 | Strings, Pad |
-
-**Pistas a crear:** 2 pistas MIDI.
-
-**Sincronización:** Master (musa-dsl controla el tempo a 100 BPM).
+- **Variatio**: Genera 24 variaciones (4 transposiciones × 3 ritmos × 2 articulaciones)
+- **Criterios**: Equilibrio de transposición, interés rítmico, articulación legato, síncopa
+- **Filtros**: Descarta staccato+syncopated, transpose 0+uniform, transpose 7+staccato
+- **Salida**: Las 2 mejores variaciones
 
 ## API de Darwin
 
@@ -161,27 +156,34 @@ Variatio genera todas las combinaciones posibles; Darwin selecciona las mejores:
 # 1. Generar variaciones con Variatio
 variatio = Variatio.new :motif do
   field :transpose, [0, 2, 4, 7]
-  field :rhythm, [:fast, :slow, :mixed]
+  field :rhythm_type, [:uniform, :long_short, :syncopated]
   field :articulation, [:legato, :staccato]
 
-  constructor do |transpose:, rhythm:, articulation:|
-    { transpose: transpose, rhythm: rhythm, articulation: articulation }
+  constructor do |transpose:, rhythm_type:, articulation:|
+    { transpose: transpose, rhythm_type: rhythm_type, articulation: articulation }
   end
 end
 
 all_variations = variatio.run  # 4 × 3 × 2 = 24 variaciones
 
-# 2. Seleccionar con Darwin
+# 2. Seleccionar con Darwin (die + dimensions + features)
 darwin = Darwin.new do
   measures do |var|
     dimension :transpose_balance, -(var[:transpose] - 4).abs.to_f
+    dimension :rhythm_interest, (var[:rhythm].uniq.size.to_f / var[:rhythm].size)
+
     feature :is_legato if var[:articulation] == :legato
+    feature :is_syncopated if var[:rhythm_type] == :syncopated
+
+    die if var[:articulation] == :staccato && var[:rhythm_type] == :syncopated
+    die if var[:transpose] == 0 && var[:rhythm_type] == :uniform
   end
 
-  weight transpose_balance: 1.0, is_legato: 2.0
+  weight transpose_balance: 1.0, rhythm_interest: 1.5,
+        is_legato: 2.0, is_syncopated: 1.5
 end
 
-best_variations = darwin.select(all_variations).first(5)
+best_variations = darwin.select(all_variations).first(2)
 ```
 
 ## Proceso de evaluación
@@ -201,7 +203,9 @@ best_variations = darwin.select(all_variations).first(5)
 - **Orquestación**: Seleccionar combinaciones tímbricas óptimas
 - **Formas**: Encontrar estructuras con balance de repetición/variación
 
-## Próximos pasos
+## Buenas prácticas
 
-- **Demo 10:** Grammar - Gramáticas generativas
-- **Demo 11:** Matrix - Gestos multidimensionales
+- **`dimension` para métricas continuas**: Usa `dimension :nombre, valor` para cualquier medida numérica (suavidad, rango, densidad). Los valores se normalizan automáticamente en la población — no necesitas normalizar manualmente.
+- **`feature` para características booleanas**: Usa `feature :nombre if condición` para rasgos que un candidato tiene o no tiene (empieza en tónica, tiene cadencia, etc.). El peso se aplica completo si es `true`.
+- **`die` para filtros absolutos**: Usa `die if condición` para descartar candidatos que violan restricciones duras (demasiados saltos, fuera de rango, etc.). Se evalúa antes del ranking.
+- **Darwin + Variatio combo**: Genera todas las combinaciones con Variatio, luego usa Darwin para seleccionar las mejores. Variatio explora el espacio; Darwin lo evalúa.

@@ -4,7 +4,15 @@
 
 ## Descripción
 
-Genera voicings SATB para una progresión armónica usando **dos niveles de Rules**. El nivel 1 genera voicings acústicamente válidos para cada acorde. El nivel 2 construye el árbol completo de la progresión y poda las secuencias que violan reglas de conducción de voces. Solo las progresiones completas que cumplen todas las restricciones sobreviven.
+Genera voicings SATB para una progresión con **modulación** usando Rules con **control externo**. Un único Rules define grows (inversión, duplicación) y cuts (locales + conducción de voces). Un bucle externo recorre la progresión acorde por acorde, pasando los voicings anteriores como parámetros para que los cuts de conducción puedan filtrar.
+
+### Progresión
+
+```
+C: I → IV → V  →  G: IV → V  →  C: IV → V → I
+                ↑                ↑
+            pivote C:V=G:I    vuelta a C
+```
 
 ## Ejecutar
 
@@ -14,55 +22,72 @@ bundle install
 ruby main.rb
 ```
 
-## Arquitectura de dos niveles
+## Arquitectura: Rules + control externo
 
-### Nivel 1: Voicings locales (por acorde)
-
-Genera voicings SATB a partir de tríadas usando constraints que no dependen del contexto.
-
-| Grow | Dimensión | Ramas |
-|------|-----------|-------|
-| `'inversión'` | Qué nota va en el bajo | Fundamental, 1ª inv, 2ª inv |
-| `'duplicación'` | Qué nota se dobla para 4 voces | Root↑, root↓, fifth↑ |
-
-| Cut | Restricción |
-|-----|-------------|
-| `'rango SATB'` | Bajo 40–60, tenor 48–67, alto 55–74, soprano 60–81 |
-| `'separación voces'` | Máximo 1 octava entre voces adyacentes |
-
-**Resultado:** Lista de voicings válidos por acorde (subconjunto de 9 candidatos).
-
-### Nivel 2: Conducción de voces (progresión completa)
-
-Construye el árbol de todas las secuencias posibles y poda las que violan reglas entre acordes consecutivos. Cada grow ramifica con los voicings del nivel 1.
-
-| Grow | Paso | Ramas |
-|------|------|-------|
-| `'voicing del I'` | 1º acorde | N voicings válidos del I |
-| `'voicing del IV'` | 2º acorde | M voicings válidos del IV |
-| `'voicing del V'` | 3º acorde | P voicings válidos del V |
-| `'voicing del I'` | 4º acorde | Q voicings válidos del I |
-
-| Cut | Restricción |
-|-----|-------------|
-| `'movimiento máximo'` | Total ≤ 24 semitonos entre voicings consecutivos |
-| `'quintas paralelas'` | Prohíbe 5ªs justas paralelas entre pares de voces |
-| `'octavas paralelas'` | Prohíbe 8ªs paralelas entre pares de voces |
-
-**Objeto acumulativo:** Cada grow añade un voicing al array de la secuencia. Los cuts comparan los dos últimos elementos (`sequence[-1]` vs `sequence[-2]`).
-
-**Resultado:** Todas las progresiones completas con conducción de voces válida.
-
-### Flujo
+### Un solo Rules con todos los constraints
 
 ```
-Nivel 1 (por acorde):
-  tríada → inversión × duplicación → filtros locales → N voicings
-
-Nivel 2 (progresión):
-  [] → +I(N) → +IV(M) → +V(P) → +I(Q) → progresiones válidas
-       cuts ────────────────────────────→ poda por conducción
+apply([chord], prev_pitches: ..., prev2_pitches: ...)
+  │
+  ├── grow 'inversión'      → 3 ramas (fundamental, 1ª, 2ª)
+  ├── grow 'duplicación'    → 3 ramas (root↑, root↓, fifth↑)
+  │                           = 9 candidatos
+  ├── cut 'rango SATB'         ← local
+  ├── cut 'separación voces'   ← local
+  ├── cut 'movimiento máximo'  ← usa prev_pitches
+  ├── cut 'quintas paralelas'  ← usa prev_pitches
+  ├── cut 'movimiento contrario' ← usa prev_pitches + prev2_pitches
+  └── cut 'octavas paralelas'  ← usa prev_pitches
 ```
+
+Los cuts locales no usan parámetros — filtran independientemente del contexto. Los cuts de conducción reciben `prev_pitches:` (voicing anterior) y `prev2_pitches:` (dos pasos atrás) para verificar reglas entre acordes.
+
+### Control externo
+
+```ruby
+sequences = [[]]  # Secuencias válidas acumuladas
+
+progression_steps.each do |step|
+  chord = step[:scale].send(step[:func]).chord
+  new_sequences = []
+
+  sequences.each do |seq|
+    tree = voicing_rules.apply([chord],
+      prev_pitches:  seq[-1],
+      prev2_pitches: seq[-2])
+    voicings = tree.combinations.map(&:last)
+
+    voicings.each { |v| new_sequences << seq + [v.pitches] }
+  end
+
+  sequences = new_sequences
+end
+```
+
+En cada paso de la progresión, para cada secuencia acumulada:
+1. Llama a Rules con el acorde nuevo + los 2 voicings anteriores
+2. Rules genera 9 variantes y las filtra con todos los cuts
+3. Los voicings supervivientes extienden la secuencia
+
+Las secuencias que no producen voicings válidos desaparecen. Al final, solo sobreviven las progresiones completas con conducción correcta.
+
+### Cuts
+
+| Cut | Contexto | Restricción |
+|-----|----------|-------------|
+| `'rango SATB'` | local | Bajo 40–60, tenor 48–67, alto 55–74, soprano 60–81 |
+| `'separación voces'` | local | Máximo 1 octava entre voces adyacentes |
+| `'movimiento máximo'` | `prev_pitches` | Total ≤ 24 semitonos entre voicings consecutivos |
+| `'quintas paralelas'` | `prev_pitches` | Prohíbe 5ªs justas paralelas entre pares de voces |
+| `'movimiento contrario'` | `prev_pitches` + `prev2_pitches` | Si una voz bajó, debe subir o mantenerse (y viceversa) |
+| `'octavas paralelas'` | `prev_pitches` | Prohíbe 8ªs paralelas entre pares de voces |
+
+### Escalas de voicing
+
+| Escala | Root MIDI | Uso |
+|--------|-----------|-----|
+| C mayor | 48 (C3) | Acordes en C: I, IV, V |
+| G mayor | 43 (G2) | Acordes en G: IV (C3), V (D3) |
 
 ## Configuración DAW
 
@@ -77,60 +102,8 @@ Nivel 2 (progresión):
 | Tenor | 3 |
 | Bajo | 4 |
 
-## API de Rules
+## API de Chord para voicings
 
-### Nivel 1: Grows semánticos con Chord API
-```ruby
-voicing_rules = Rules.new do
-  grow 'inversión' do |chord|
-    branch chord                                # Posición fundamental
-    branch chord.with_move(root: 1)             # 1ª inversión
-    branch chord.with_move(root: 1, third: 1)   # 2ª inversión
-  end
-
-  grow 'duplicación' do |chord|
-    branch chord.with_duplicate(root: 1)        # Doblar fundamental
-    branch chord.with_duplicate(fifth: 1)       # Doblar quinta
-  end
-
-  cut 'rango SATB' do |chord|
-    pitches = chord.pitches
-    prune if pitches[0] < 40 || pitches[0] > 60 if pitches.size >= 4
-  end
-end
-
-# Aplicar por acorde
-tree = voicing_rules.apply([scale.tonic.chord])
-voicings = tree.combinations.map(&:last)
-```
-
-### Nivel 2: Objeto acumulativo con cuts entre pasos
-```ruby
-progression_rules = Rules.new do
-  # Cada grow ramifica con los voicings pre-generados
-  grow "voicing del I" do |sequence|
-    i_voicings.each { |chord| branch sequence + [chord.pitches] }
-  end
-
-  grow "voicing del IV" do |sequence|
-    iv_voicings.each { |chord| branch sequence + [chord.pitches] }
-  end
-
-  # Cuts comparan los dos últimos elementos de la secuencia
-  cut 'quintas paralelas' do |sequence|
-    if sequence.size >= 2
-      curr, prev = sequence[-1], sequence[-2]
-      # ... detectar quintas paralelas entre curr y prev
-    end
-  end
-end
-
-# Seed = array vacío; el objeto crece con cada grow
-tree = progression_rules.apply([[]])
-progressions = tree.combinations.map(&:last)
-```
-
-### API de Chord para voicings
 ```ruby
 chord = scale.tonic.chord                   # Tríada: [60, 64, 67]
 
@@ -148,7 +121,7 @@ chord.pitches                               # => [60, 64, 67]
 
 ## Buenas prácticas
 
-- **Dos niveles de Rules para separar concerns**: El nivel 1 filtra lo acústicamente imposible (rangos, separación). El nivel 2 filtra lo musicalmente incorrecto (conducción de voces). Cada nivel tiene sus propios grows y cuts, sin mezclar restricciones locales con contextuales.
-- **Objeto acumulativo para llevar la historia**: En el nivel 2, el objeto es un array que crece con cada grow (`sequence + [pitches]`). Los cuts comparan `sequence[-1]` con `sequence[-2]`. Esto sigue el patrón estándar de Rules — el objeto lleva su propio contexto.
-- **Árbol completo para explorar todas las combinaciones**: A diferencia de seleccionar voicings paso a paso (greedy), el árbol completo explora TODAS las secuencias posibles. Un voicing del I que parece "malo" para el IV puede ser "perfecto" para la progresión completa I→IV→V→I.
+- **Rules + control externo para contexto progresivo**: Los grows generan variantes del acorde, los cuts filtran con constraints locales Y de conducción. El bucle externo pasa `prev_pitches:` y `prev2_pitches:` como parámetros de `apply()`, manteniendo Rules sin estado y el control explícito.
+- **Parámetros con `nil` por defecto para cuts graduales**: Los cuts de conducción declaran `prev_pitches: nil, prev2_pitches: nil`. En el primer paso (sin historia), los parámetros son `nil` y los cuts se saltan. En pasos posteriores, se activan progresivamente. Esto permite un solo Rules para todos los pasos.
+- **Modulación con acorde pivote**: El V de C (Sol mayor) es simultáneamente I de G. Se define como `c_major.dominant` y el siguiente paso usa `g_major.subdominant`. Dos escalas en registros bajos (C3, G2) mantienen las tríadas en rango SATB.
 - **`with_move` para inversiones, `with_duplicate` para doblar voces**: `with_move(root: 1)` mueve la fundamental una octava arriba (inversión). `with_duplicate(root: -1)` añade una copia una octava abajo (duplicación para SATB). Ambos retornan un Chord nuevo.

@@ -21,6 +21,7 @@ include Musa::MIDIVoices
 # Configuración MIDI
 # ============================================================================
 
+puts "Selecciona el puerto MIDI de salida (notas hacia el DAW):"
 output = MIDICommunications::Output.gets
 
 # ============================================================================
@@ -42,7 +43,7 @@ end
 # Escala y Voces
 # ============================================================================
 
-scale = Scales.default_system.default_tuning.get(:major).get(60)
+scale = Scales.et12[440.0].major[60]
 
 voices = MIDIVoices.new(
   sequencer: transport.sequencer,
