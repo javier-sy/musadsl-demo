@@ -544,17 +544,18 @@ Automatización de parámetros musicales (velocity, duración, articulación) us
 ### Recursos musa-dsl
 - `SIN(steps:, center:, amplitude:, start_value:)` - Generador sinusoidal
 - `SIN().repeat(2)` - Envolvente ida y vuelta
-- `move from:, to:, duration:, every: do |v| end` - Rampa lineal
-- Números primos para períodos no-repetitivos
+- `move from:, to:, duration: do |v| end` - Rampa lineal
+- `voice.controller[cc] = value` - Control changes MIDI
+- `PRIMES[]` - Números primos para períodos no-repetitivos
 
 ### Código ejemplo
 ```ruby
-# Velocity sinusoidal
-vel_s = SIN(steps: 13, center: 70, amplitude: 40).repeat(2)
+# Velocity sinusoidal con período primo
+vel_env = SIN(steps: PRIMES[6], center: 70, amplitude: 40).instance
 
-# CC automation
-move from: 0, to: 127, duration: 8, every: 1/8r do |v|
-  voice.control_change(1, v.to_i)
+# CC automation con move
+move from: 0, to: 127, duration: 1 do |v|
+  voice.controller[1] = v.to_i
 end
 ```
 

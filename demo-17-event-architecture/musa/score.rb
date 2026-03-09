@@ -162,7 +162,7 @@ module TheScore
 
       wait 3/4r do
         puts "\n¡Demo de Event Architecture terminada!"
-        stop_transport
+        transport.stop
       end
     end
 

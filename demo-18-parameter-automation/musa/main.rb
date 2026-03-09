@@ -1,9 +1,11 @@
-# Demo 17: Event Architecture - Sistema launch/on
+# Demo 18: Parameter Automation - SIN() y move
 #
-# Demuestra el sistema de eventos para composiciones estructuradas
-# por fases con transiciones automáticas.
+# Demuestra automatización de parámetros usando:
+# - SIN() para envolventes sinusoidales
+# - move para rampas lineales
+# - Números primos para períodos no repetitivos
 #
-# Inspirado en Estudio para clave nº1 (2019) y Piezoreflections (2017)
+# Inspirado en Estudio para piano nº3 (2019)
 #
 # Ejecutar: ruby main.rb
 
@@ -19,12 +21,14 @@ include Musa::Scales
 include Musa::MIDIVoices
 include Musa::Datasets
 
+require_relative 'primes'
+
 # ============================================================================
 # Banner
 # ============================================================================
 
 puts "=" * 60
-puts "Demo 17: Event Architecture - Sistema launch/on"
+puts "Demo 18: Parameter Automation - SIN() y move"
 puts "=" * 60
 puts
 
@@ -39,7 +43,7 @@ midi_output = MIDICommunications::Output.gets
 # Clock y Transport
 # ============================================================================
 
-clock = TimerClock.new(bpm: 90, ticks_per_beat: 24)
+clock = TimerClock.new(bpm: 80, ticks_per_beat: 24)
 transport = Transport.new(clock, 4, 24, do_log: true)
 
 # TimerClock requiere inicio explícito
@@ -59,11 +63,11 @@ scale = Scales.et12[440.0].major[60]  # Do Mayor desde C4
 voices = MIDIVoices.new(
   sequencer: transport.sequencer,
   output: midi_output,
-  channels: [0]  # Canal 1
+  channels: [0, 1]  # 2 canales
 )
 
 # ============================================================================
-# Composición con Eventos
+# Composición
 # ============================================================================
 
 transport.sequencer.with(scale: scale, transport: transport, voices: voices) do |scale:, transport:, voices:|
@@ -73,7 +77,8 @@ transport.sequencer.with(scale: scale, transport: transport, voices: voices) do 
 
   def scale = @scale
   def transport = @transport
-  def voice = @voices.voices[0]
+  def v1 = @voices.voices[0]
+  def v2 = @voices.voices[1]
 
   load 'score.rb'
   extend TheScore
@@ -84,16 +89,18 @@ end
 # Iniciar
 # ============================================================================
 
-puts "Sistema de eventos:"
-puts "  - on :event - registra handler"
-puts "  - launch :event - dispara evento"
-puts "  - control.after { } - callback al terminar"
+puts "Funciones de automatización:"
+puts "  - SIN(steps:, center:, amplitude:) - envolvente sinusoidal"
+puts "  - move(from:, to:, duration:) - rampa lineal"
+puts "  - PRIMES[] - períodos no repetitivos"
 puts
-puts "Fases de la composición:"
-puts "  1. Introducción (evento :intro)"
-puts "  2. Desarrollo (evento :development)"
-puts "  3. Clímax (evento :climax)"
-puts "  4. Coda (evento :coda)"
+puts "Secciones:"
+puts "  1. SIN() básico para velocity"
+puts "  2. SIN() con primes para períodos no repetitivos"
+puts "  3. move para fade in/out de CC"
+puts "  4. move con step (glissando)"
+puts "  5. Combinación de múltiples automatizaciones"
+puts "  6. SIN().repeat() ida y vuelta"
 puts
 puts "Presiona Ctrl+C para detener"
 puts
