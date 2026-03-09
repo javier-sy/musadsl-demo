@@ -621,6 +621,7 @@ Archivos `.neu` externos con variables, referencias y operadores. Transcriptor c
 Estructura composicional basada en números Fibonacci. Cada episodio lanza fibo(n) threads paralelos, con tracking de finalización y transiciones coordinadas.
 
 ### Recursos musa-dsl
+- `FIBO().max_size().to_a` para precalcular Fibonacci
 - `FIBO().max_size()` + `.eval {}` para material parametrizado
 - `on :start_episode do |episode| end` - Handler de episodio
 - `@controls_playing[episode]` - Tracking de threads activos
@@ -629,8 +630,10 @@ Estructura composicional basada en números Fibonacci. Cada episodio lanza fibo(
 
 ### Código ejemplo
 ```ruby
+@fibs = FIBO().max_size(@max_episodes).to_a  # [1, 1, 2, 3, 5, 8, 13, 21]
+
 on :start_episode do |episode|
-  fibo(episode).times do |t|
+  @fibs[episode - 1].times do |t|
     wait Rational(t, 16) do
       launch :thread_start, episode, t
     end
