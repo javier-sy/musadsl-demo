@@ -1,0 +1,6 @@
+# Demo 16: OSC Max/MSP - Secuenciador Reactivo
+
+source 'https://rubygems.org'
+
+gem 'musa-dsl'
+gem 'osc-ruby'
