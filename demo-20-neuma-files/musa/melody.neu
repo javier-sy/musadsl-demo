@@ -1,0 +1,18 @@
+@motif = [ (I 1/4 mf) (II +1/8) (III -1/8) (IV 1/2) ]
+
+@motif_tr = [ (I 1/4 mf tr) (II +1/8) (III -1/8 mor) (IV 1/2) ]
+
+@motif_up = [ (I +o1 1/4 mf) (II +1/8) (III -1/8) (IV 1/2) ]
+
+@var1 = [ @motif.reverse ]
+
+@phrase = [ @motif (silence 1/4) @var1 ]
+
+@parallel_demo = [ @motif || @motif_up ]
+
+@motif
+@motif_tr
+(silence 1/2)
+@phrase
+
+::end

@@ -1,0 +1,7 @@
+# Demo 20: Neuma Files & Transcriptor
+# Archivos .neu externos y ornamentos
+
+source 'https://rubygems.org'
+
+gem 'musa-dsl', '~> 0.41'
+gem 'midi-communications'

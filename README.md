@@ -589,49 +589,62 @@ play(h) { |note| voice.note(**note) }
 
 ## Demo 20: Neuma Files
 
-**Nivel:** Intermedio | **Clock:** Master (TimerClock) | **Inspirado en:** Pieza pseudo-barroca (2018)
+**Nivel:** Intermedio | **Clock:** Master (TimerClock)
 
 ### Descripción Musical
-Composición usando archivos `.neu` externos con variables, referencias y operadores. Transcriptor completo con todos los ornamentos barrocos.
+Archivos `.neu` externos con variables, referencias y operadores. Transcriptor completo con ornamentos (Trill, Mordent, Turn, Appogiatura). Pipeline: Neuma → GDV → PDV → MIDI. Secciones encadenadas con `control.after`.
 
 ### Recursos musa-dsl
-- `Musa::Neumalang.parse_file('neumas.neu')` - Carga archivo
-- Variables en .neu: `@motif = [ I.1/4.mf II.+1/8.tr ]`
+- `Neumalang.parse_file('melody.neu')` - Carga archivo .neu (sin `decode_with:` si tiene variables)
+- Variables en .neu: `@motif = [ (I 1/4 mf) (II +1/8 tr) ]`
 - Referencias: `@phrase = [ @motif @motif.reverse ]`
-- Operadores: `||` (alternativa), `+` (concatenación)
-- Transcriptor completo con Trill, Mordent, Turn, Appogiatura
+- Operadores: `||` (paralelo)
+- `Musa::Transcriptors::FromGDV::ToMIDI.transcription_set` - Ornamentos
+- `Musa::Neumas::Decoders::NeumaDecoder` - Decoder GDV
+- `control.after { }` - Encadenamiento de secciones
 
-### Archivo neumas.neu ejemplo
+### Archivo melody.neu ejemplo
 ```
-@a = [ I.1/4.mf  II.+1/8.tr  III.-1/8.mor  IV.1/2 ]
-@b = [ V.1/4  IV.-1/8  III  II  I.1/2 ]
-@phrase = [ @a || @b ]
-@coda = [ I.1.ff ]
+@motif = [ (I 1/4 mf) (II +1/8) (III -1/8) (IV 1/2) ]
+@motif_tr = [ (I 1/4 mf tr) (II +1/8) (III -1/8 mor) (IV 1/2) ]
+@var1 = [ @motif.reverse ]
+@phrase = [ @motif (silence 1/4) @var1 ]
 ```
 
 ---
 
 ## Demo 21: Fibonacci Episodes
 
-**Nivel:** Avanzado | **Clock:** Master (TimerClock) | **Inspirado en:** Estudio Fibonacci para piano nº2 (2018)
+**Nivel:** Avanzado | **Clock:** Master (TimerClock)
 
 ### Descripción Musical
 Estructura composicional basada en números Fibonacci. Cada episodio lanza fibo(n) threads paralelos, con tracking de finalización y transiciones coordinadas.
 
 ### Recursos musa-dsl
-- Función `fibo(n)` para números Fibonacci
-- `on :next_episode do |episode| end` - Handler de episodio
-- `controls_playing[episode]` - Tracking de threads activos
-- `.after { launch :thread_finished }` - Sincronización
+- `FIBO().max_size()` + `.eval {}` para material parametrizado
+- `on :start_episode do |episode| end` - Handler de episodio
+- `@controls_playing[episode]` - Tracking de threads activos
+- `control.after { launch :thread_finished }` - Sincronización
+- `H(pitch:, duration:, velocity:)` - Series hash para notas
 
 ### Código ejemplo
 ```ruby
-on :next_episode do |episode|
+on :start_episode do |episode|
   fibo(episode).times do |t|
-    ctrl = play(material_for(t)) { |n| voice.note(**n) }
-    controls_playing[episode] << ctrl
-    ctrl.after { launch :finished, episode }
+    wait Rational(t, 16) do
+      launch :thread_start, episode, t
+    end
   end
+end
+
+on :thread_start do |episode, thread_id|
+  melody = material_for_thread(episode, thread_id).instance
+  control = play melody do |note|
+    voice.note(pitch: note[:pitch].to_i, duration: note[:duration],
+               velocity: note[:velocity].to_i.clamp(1, 127))
+  end
+  @controls_playing[episode] << control
+  control.after { launch :thread_finished, episode, thread_id }
 end
 ```
 
@@ -639,7 +652,7 @@ end
 
 ## Demo 22: Multi-Phase
 
-**Nivel:** Avanzado | **Clock:** Master (TimerClock) | **Inspirado en:** Estudio para piano nº3 (2019)
+**Nivel:** Avanzado | **Clock:** Master (TimerClock)
 
 ### Descripción Musical
 Composición en múltiples fases (intro, desarrollo, clímax, coda) con estado complejo, series que se reinician, y transiciones controladas por flags.
