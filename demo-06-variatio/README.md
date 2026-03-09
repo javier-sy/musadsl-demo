@@ -19,7 +19,7 @@ ruby main.rb
 Variatio genera todas las combinaciones posibles de los campos definidos:
 
 ```
-4 transposiciones × 4 ritmos × 2 articulaciones = 32 variaciones
+4 transposiciones × 4 ritmos × 2 direcciones = 32 variaciones
 ```
 
 ## Configuración DAW

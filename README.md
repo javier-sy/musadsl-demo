@@ -2,7 +2,7 @@
 
 Esta carpeta contiene 23 demostraciones progresivas del framework **musa-dsl** para composición algorítmica en Ruby. Incluye demos con MIDI y OSC, basadas en técnicas reales usadas en obras de composición.
 
-> **Nota:** Las demos 00-11 han sido revisadas y están disponibles en el repositorio. Las demos 12-22 están pendientes de revisión.
+> **Nota:** Las demos publicadas en el repositorio han sido revisadas. Algunas demos están pendientes de publicar.
 
 > **Nota:** Son demostraciones orientadas a mostrar las características y posibilidades de musa-dsl. NO PRETENDEN TENER NINGÚN VALOR ARTÍSTICO NI CREATIVO.
 
@@ -64,8 +64,8 @@ clock = InputMidiClock.new(clock_input)
 | 13 | [Live Coding](#demo-13-live-coding) | Avanzado | Slave | Performance interactiva |
 | 14 | [Clock Modes](#demo-14-clock-modes) | Intermedio | Ambos | Comparativa de modos |
 | **OSC** |||||
-| 15 | [OSC SuperCollider](#demo-15-osc-supercollider) | Avanzado | OSC | Control de síntesis granular |
-| 16 | [OSC Max/MSP](#demo-16-osc-maxmsp) | Avanzado | OSC | Audio espacial y módulos |
+| 15 | [OSC SuperCollider](#demo-15-osc-supercollider) | Avanzado | Master | Control de síntesis granular via OSC |
+| 16 | [OSC Max/MSP](#demo-16-osc-maxmsp) | Intermedio | Master | Secuenciador reactivo via OSC |
 | **Patrones Avanzados** |||||
 | 17 | [Event Architecture](#demo-17-event-architecture) | Intermedio | Master | Sistema launch/on |
 | 18 | [Parameter Automation](#demo-18-parameter-automation) | Intermedio | Master | SIN(), move, envelopes |
@@ -174,7 +174,7 @@ Exploración auditiva de los diferentes constructores de series: melodías fijas
 **Nivel:** Intermedio | **Clock:** Master (TimerClock)
 
 ### Descripción Musical
-Un canon clásico a dos voces donde la segunda voz entra 2 compases después de la primera, ejecutando exactamente la misma melodía. Demuestra el sistema buffered para lecturas independientes de una misma serie.
+Un canon clásico a dos voces donde la segunda voz entra 1 compás después de la primera, ejecutando exactamente la misma melodía. Demuestra el sistema buffered para lecturas independientes de una misma serie.
 
 ### Recursos musa-dsl
 - `.buffered` - Crea serie con buffer compartido
@@ -254,7 +254,7 @@ Un motivo de 4 notas con todas sus variaciones posibles de transposición, ritmo
 - `Variatio.new(:name) { field; constructor }` - Definición de variatio
 - `field :transpose, [0, 2, 4, 7]` - Campo con opciones
 - `field :direction, [:normal, :reverse]` - Motivo normal o al revés
-- `constructor { |transpose:, articulation:| }` - Bloque constructor
+- `constructor { |transpose:, direction:| }` - Bloque constructor
 - `.run` - Genera todas las combinaciones (Array)
 - `H(grade:, duration:, velocity:)` - Convertir variación a serie
 - `on :event` / `launch :event` - Sistema de eventos
@@ -456,7 +456,7 @@ demo-14-clock-modes/
 
 ## Demo 15: OSC SuperCollider
 
-**Nivel:** Avanzado | **Protocolo:** OSC | **Inspirado en:** The Washing Machine (2016)
+**Nivel:** Avanzado | **Protocolo:** OSC | **Clock:** Master (TimerClock) | **Inspirado en:** The Washing Machine (2016)
 
 ### Descripción Musical
 Control de síntesis granular en SuperCollider via OSC. Múltiples voces de granulador controladas desde musa-dsl con parámetros: volumen, pitch, tamaño de ventana.
@@ -482,27 +482,28 @@ Control de síntesis granular en SuperCollider via OSC. Múltiples voces de gran
 
 ## Demo 16: OSC Max/MSP
 
-**Nivel:** Avanzado | **Protocolo:** OSC | **Inspirado en:** Elevator Door series (2017)
+**Nivel:** Intermedio | **Protocolo:** OSC | **Clock:** Master (TimerClock)
 
 ### Descripción Musical
-Control de módulos de audio espacial en Max/MSP. Routing dinámico a múltiples altavoces, control de posición y automatización espacial.
+Secuenciador algorítmico controlado en tiempo real desde Max/MSP via OSC. Max envía parámetros (escala, densidad, registro) y recibe notas generadas por musa-dsl. Arquitectura push: los cambios llegan como eventos al sequencer.
 
 ### Recursos musa-dsl + OSC
-- `OSC::Client.new('localhost', 8001)` - Puerto hacia Max
-- Mensajes: `/start`, `/stop`, `/position`, `/modul`, `/space`
-- Clase `Modules` para matriz de módulos
-- Clase `Speakers` para asignación dinámica
+- `OSC::Server` en puerto 8000 - Recibe parámetros de Max
+- `OSC::Client` en puerto 8001 - Envía notas a Max
+- `sequencer.launch(:event)` - Integración OSC → eventos del sequencer
+- `every 1/8r` - Motor rítmico con patrones de densidad
+- `Scales.et12[440.0].send(mode)[root]` - Escala dinámica
 
 ### Archivos
-- `main.rb` - Setup con InputMidiClock + OSC
-- `modules.rb` - Control de módulos espaciales
-- `speakers.rb` - Allocator de altavoces
-- `score.rb` - Composición espacial
+- `main.rb` - Setup: TimerClock, Transport, OSC
+- `score.rb` - Generador de notas con `every` + handlers reactivos
+- `input_handler.rb` - Recibe params de Max y lanza eventos en el sequencer
+- `osc_output.rb` - Envía notas a Max
 
 ### Configuración
-1. Abrir patch Max/MSP incluido
-2. Configurar routing de audio
-3. Ejecutar `ruby main.rb`
+1. Abrir patch Max/MSP incluido (`max/`)
+2. Ejecutar `cd musa && ruby main.rb`
+3. Mover sliders en Max para controlar la música
 
 ---
 

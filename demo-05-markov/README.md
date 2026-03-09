@@ -74,11 +74,11 @@ markov_grades = Markov.new(
 ### Markov para duraciones
 ```ruby
 markov_durations = Markov.new(
-  start: 1/2r,
+  start: 1/4r,
   transitions: {
-    1/4r => { 1/4r => 0.3, 1/2r => 0.5, 1r => 0.2 },
-    1/2r => { 1/4r => 0.3, 1/2r => 0.4, 1r => 0.3 },
-    1r   => { 1/4r => 0.4, 1/2r => 0.5, 1r => 0.1 }
+    1/8r => { 1/8r => 0.3, 1/4r => 0.5, 1/2r => 0.2 },
+    1/4r => { 1/8r => 0.3, 1/4r => 0.4, 1/2r => 0.3 },
+    1/2r => { 1/8r => 0.4, 1/4r => 0.5, 1/2r => 0.1 }
   }
 )
 ```

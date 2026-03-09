@@ -55,7 +55,7 @@ Abrir el patch en Max/MSP (ver `max/README.md` para construcción del patch).
 ## Cómo funciona
 
 1. `InputHandler` (`OSC::Server`) escucha en puerto 8000 en un thread separado
-2. Cuando un parámetro cambia, `InputHandler` llama `sequencer.launch(:param_changed)`
+2. Cuando un parámetro cambia, `InputHandler` llama `sequencer.launch` con el evento específico (`:root_changed`, `:mode_changed`, `:density_changed`, `:register_changed`)
 3. Los handlers `on :root_changed`, `on :density_changed`, etc. actualizan variables locales (escala, patrón, offset)
 4. El `every 1/8r` genera notas leyendo esas variables — no pollea inputs
 5. Cada nota se envía a Max via `OscOutput` (`OSC::Client`)
