@@ -658,27 +658,38 @@ end
 **Nivel:** Avanzado | **Clock:** Master (TimerClock)
 
 ### Descripción Musical
-Composición en múltiples fases (intro, desarrollo, clímax, coda) con estado complejo, series que se reinician, y transiciones controladas por flags.
+Composición en múltiples fases (exposición, desarrollo, recapitulación, coda) con estado complejo, series que se reinician por fase, articulaciones como series, y transiciones coordinadas por eventos.
 
 ### Recursos musa-dsl
 - Fases: `on :phase1_start`, `on :phase2_start`, etc.
-- `.restart` para reiniciar series
-- `.i` para nuevas instancias de iterador
-- Flags de estado: `phase1_passed = false`
-- Transiciones condicionales entre fases
+- `on :transition do |next_phase|` - Transiciones entre fases
+- `H(grade:, duration:, velocity:).instance` - Series hash reinstanciadas por episodio
+- `SIN()`, `FIBO()` para material parametrizado
+- Articulaciones como series: `S({legato: true}, {staccato: true}).repeat`
+- Canon condicional con segunda voz en Phase 2
 
 ### Código ejemplo
 ```ruby
-phase1_passed = false
-
-on :phase1_next_episode do
-  if duration_s = duration_ss.v
-    amplitude_s.restart
-    launch :phase1_thread, pitch, add_s.i, duration_s.i
-  else
-    phase1_passed = true
-    launch :phase2_start
+on :phase1_episode do
+  @state[:phase1_episodes] += 1
+  if @state[:phase1_episodes] > 3
+    launch :transition, :phase2
+    next
   end
+
+  series = phase1_series
+  melody = H(
+    grade: series[:pitches].instance,
+    duration: series[:durations].instance,
+    velocity: series[:velocities].instance
+  ).instance
+
+  control = play melody do |note|
+    pitch = scale[note[:grade]].pitch
+    v1.note(pitch: pitch, duration: note[:duration],
+            velocity: note[:velocity].to_i.clamp(1, 127))
+  end
+  control.after { wait 1/8r do launch :phase1_episode end }
 end
 ```
 
