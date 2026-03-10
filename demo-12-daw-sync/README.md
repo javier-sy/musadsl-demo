@@ -4,7 +4,7 @@
 
 ## Descripción
 
-En este demo, el **DAW controla el tempo** y musa-dsl actúa como esclavo. El script espera recibir MIDI Clock del DAW y sincroniza sus eventos al tempo del proyecto. Esto permite:
+En este demo, el **DAW controla el tempo** y musa-dsl actúa como follower. El script espera recibir MIDI Clock del DAW y sincroniza sus eventos al tempo del proyecto. Esto permite:
 
 - Cambiar el tempo desde el DAW y musa-dsl sigue automáticamente
 - Integrar musa-dsl en proyectos DAW existentes
@@ -30,15 +30,14 @@ ruby main.rb
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Clock | DAW → musa-dsl |
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Melodía | 1 |
-| Acordes | 2 |
+**Modo Slave**: esta demo requiere dos puertos MIDI virtuales (Main + Clock). El DAW controla el tempo. Pulsa Play en el DAW para iniciar.
+
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Melodía | 1 | Línea melódica |
+| Acordes | 2 | Progresión armónica |
 
 ## Secciones de la composición
 

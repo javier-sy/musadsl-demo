@@ -8,14 +8,12 @@ Operaciones avanzadas con series: `H()` para combinar pitch/duration/velocity, `
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Voz principal | 1 |
-| Voz canon/secundaria | 2 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Voz principal | 1 | Melodía |
+| Voz canon/secundaria | 2 | Canon o segunda voz |
 
 ## Requisitos
 

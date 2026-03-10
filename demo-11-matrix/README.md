@@ -22,14 +22,12 @@ ruby main.rb
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Gestos melódicos | 1 |
-| Acordes/texturas | 2 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Gestos melódicos | 1 | Secuencias de la matriz |
+| Acordes/texturas | 2 | Texturas armónicas |
 
 ## Secciones
 

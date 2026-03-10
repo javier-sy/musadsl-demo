@@ -33,14 +33,12 @@ ruby main.rb
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI | Estilo      |
-|-------|------------|-------------|
-| Diatónico | 1 | Clásico     |
-| Jazzy | 2 | Jazzy       |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Diatónico | 1 | Clásico |
+| Jazzy | 2 | Jazzy |
 | Minimal | 3 | Minimalista |
 
 ## Cadenas de Markov

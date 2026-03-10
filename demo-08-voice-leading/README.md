@@ -91,16 +91,14 @@ Las secuencias que no producen voicings válidos desaparecen. Al final, solo sob
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Soprano | 1 |
-| Alto | 2 |
-| Tenor | 3 |
-| Bajo | 4 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Soprano | 1 | Voz superior |
+| Alto | 2 | Voz media-alta |
+| Tenor | 3 | Voz media-baja |
+| Bajo | 4 | Voz inferior |
 
 ## API de Chord para voicings
 

@@ -10,13 +10,11 @@ Este demo también introduce el **sistema de eventos** para encadenar secciones 
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Melodía | 1 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Melodía | 1 | Melodía |
 
 ## Ejecutar
 

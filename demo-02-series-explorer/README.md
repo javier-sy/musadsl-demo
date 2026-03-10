@@ -4,7 +4,7 @@
 
 ## Descripción
 
-Exploración los diferentes constructores de series de musa-dsl. Cuatro voces entran progresivamente:
+Exploración de los diferentes constructores de series de musa-dsl. Cuatro voces entran progresivamente:
 
 - **S()** - Serie de valores literales (melodía fija) - Beat 1
 - **FOR()** - Secuencia numérica (escalas) - Beat 3
@@ -22,12 +22,10 @@ ruby main.rb
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI | Constructor |
-|-------|------------|-------------|
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
 | Melodía S | 1 | S() |
 | Escala FOR | 2 | FOR() |
 | Random RND | 3 | RND() |

@@ -31,13 +31,11 @@ ruby main.rb
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Piano | 1 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Piano | 1 | Piano |
 
 ## Recursos musa-dsl utilizados
 

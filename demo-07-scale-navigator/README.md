@@ -45,15 +45,13 @@ Demuestra que `scale[n]` acepta cualquier entero:
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Melodía | 1 |
-| Acordes | 2 |
-| Bajo | 3 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Melodía | 1 | Línea melódica |
+| Acordes | 2 | Progresión armónica |
+| Bajo | 3 | Línea de bajo |
 
 ## API de Escalas
 

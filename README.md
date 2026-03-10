@@ -6,6 +6,25 @@ Esta carpeta contiene 23 demostraciones progresivas del framework **musa-dsl** p
 
 > **Nota:** Son demostraciones orientadas a mostrar las características y posibilidades de musa-dsl. NO PRETENDEN TENER NINGÚN VALOR ARTÍSTICO NI CREATIVO.
 
+---
+
+## Requisitos
+
+- Ruby 3.4+
+- Gems: `musa-dsl`, `midi-communications`
+- DAW: Bitwig Studio o Ableton Live
+- MIDI virtual: IAC Driver (macOS)
+
+## Ejecución
+
+```bash
+cd demo-XX-nombre/musa
+bundle install
+ruby main.rb
+```
+
+- **Master Clock**: el script inicia inmediatamente.
+- **Slave Clock**: el script espera MIDI Start del DAW (pulsa Play en el DAW).
 
 ---
 
@@ -41,6 +60,42 @@ clock = InputMidiClock.new(clock_input)
 - **El DAW controla el tempo**
 - musa-dsl recibe MIDI Clock del DAW y sincroniza sus eventos
 - Útil para: integración con proyectos DAW existentes, colaboración, live coding
+
+---
+
+## Proyecto DAW Compartido
+
+Todas las demos MIDI pueden ejecutarse con un **proyecto DAW único** preconfigurado, sin necesidad de crear un proyecto por demo.
+
+| Carpeta | DAW |
+|---------|-----|
+| `daw-bitwig/` | Proyecto Bitwig Studio |
+| `daw-live/` | Proyecto Ableton Live |
+
+### Configuración del proyecto compartido
+
+| Pista | Canal MIDI | Instrumento |
+|-------|------------|-------------|
+| 1 | 1 | Instrumento expresivo |
+| 2 | 2 | Instrumento expresivo |
+| 3 | 3 | Instrumento expresivo |
+| 4 | 4 | Instrumento expresivo |
+
+- Cada pista responde a **Note On** (pitch + velocity), **CC1** (modulación) y **Pitch Bend**
+- **Reverb global** compartida por todas las pistas
+- Las demos usan entre 1 y 4 canales — el README de cada demo indica qué canal hace qué
+
+### Clock Master vs Slave
+
+| Modo | Puerto MIDI | Quién controla el tempo | Demos |
+|------|-------------|------------------------|-------|
+| **Master** | Main: musa-dsl → DAW | musa-dsl (TimerClock) | La mayoría |
+| **Slave** | Main: musa-dsl → DAW **+** Clock: DAW → musa-dsl | El DAW (InputMidiClock) | 00, 12, 14 |
+
+- **Master**: musa-dsl genera su propio reloj. El DAW solo recibe notas MIDI.
+- **Slave**: el DAW envía MIDI Clock. musa-dsl espera recibir MIDI Start antes de sonar. Se necesitan **dos puertos MIDI virtuales**: uno para notas y otro para clock.
+
+**Nota:** Las demos 15 y 16 usan OSC (no MIDI) y no necesitan el proyecto DAW compartido.
 
 ---
 
@@ -82,7 +137,7 @@ clock = InputMidiClock.new(clock_input)
 
 ### Descripción
 
-Plantilla base para empezar proyectos de composición algorítmica con MusaDSL. Incluye configuración completa lista para usar con Bitwig Studio.
+Plantilla base para empezar proyectos de composición algorítmica con MusaDSL. 
 
 ### Recursos musa-dsl
 
@@ -692,43 +747,6 @@ on :phase1_episode do
   control.after { wait 1/8r do launch :phase1_episode end }
 end
 ```
-
----
-
-## Estructura de Carpetas
-
-Cada demo sigue esta estructura:
-
-```
-demo-XX-nombre/
-├── musa/
-│   ├── main.rb         # Setup: clock, transport, MIDI, escalas
-│   ├── score.rb        # Composición modular (se puede recargar)
-│   └── Gemfile         # gem 'musa-dsl', gem 'midi-communications'
-├── README.md           # Instrucciones específicas de la demo
-├── bw/                 # (Crear manualmente) Proyecto Bitwig
-└── live/               # (Crear manualmente) Proyecto Ableton Live
-```
-
----
-
-## Requisitos
-
-- Ruby 3.4+
-- Gems: `musa-dsl`, `midi-communications`
-- DAW: Bitwig Studio o Ableton Live
-- MIDI virtual: IAC Driver (macOS) o loopMIDI (Windows)
-
-## Ejecución
-
-```bash
-cd demo-XX-nombre/musa
-bundle install
-ruby main.rb
-```
-
-Para demos con **Master Clock**: el script inicia inmediatamente.
-Para demos con **Slave Clock**: el script espera MIDI Start del DAW.
 
 ---
 

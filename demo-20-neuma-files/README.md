@@ -8,13 +8,11 @@ Archivos `.neu` externos con notación neuma y Transcriptor completo con ornamen
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Melodía ornamentada | 1 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Melodía ornamentada | 1 | Neumas con ornamentos |
 
 ## Requisitos
 

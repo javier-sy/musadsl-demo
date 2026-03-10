@@ -19,16 +19,16 @@ bundle install
 ruby main.rb
 ```
 
-Abrir el patch en Max/MSP (ver `max/README.md` para construcción del patch).
+Abrir los patches `controller.maxmsp`y `synth.maxmsp` en Max/MSP (ver `max/README.md` para más información de los patches).
 
 ## Archivos
 
-| Archivo | Propósito |
-|---------|-----------|
-| `main.rb` | Entry point: TimerClock, Transport, OSC setup |
-| `score.rb` | Generador de notas con `every` + handlers reactivos |
-| `input_handler.rb` | `InputHandler`: recibe params y lanza eventos en el sequencer |
-| `osc_output.rb` | `OscOutput`: envía notas a Max (`OSC::Client`) |
+| Archivo | Propósito                                                         |
+|---------|-------------------------------------------------------------------|
+| `main.rb` | Entry point: TimerClock, Transport, OSC setup                     |
+| `score.rb` | Generador de notas con `every` + handlers reactivos               |
+| `input_handler.rb` | `InputHandler`: recibe parámetros y lanza eventos en el sequencer |
+| `osc_output.rb` | `OscOutput`: envía notas a Max (`OSC::Client`)                    |
 
 ## Conexión OSC
 

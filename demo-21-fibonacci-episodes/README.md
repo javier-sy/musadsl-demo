@@ -8,15 +8,13 @@ Estructura de composición basada en episodios donde cada episodio tiene un núm
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Melodía (múltiples hilos) | 1 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Melodía | 1 | Múltiples hilos simultáneos |
 
-**Nota:** Aunque usa un solo canal, pueden sonar múltiples hilos melódicos simultáneos (hasta 21 en el episodio 8).
+**Nota:** Aunque usa un solo canal, pueden sonar hasta 21 hilos melódicos simultáneos (episodio 8).
 
 ## Requisitos
 

@@ -8,9 +8,7 @@ Composición con múltiples fases que tienen estado independiente, series que se
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
 | Pista | Canal MIDI | Rol |
 |-------|------------|-----|

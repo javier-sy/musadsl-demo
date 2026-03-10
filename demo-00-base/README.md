@@ -9,19 +9,16 @@ Plantilla base para empezar proyectos de composición algorítmica con MusaDSL. 
 - Configuración MIDI completa (4 canales)
 - Transcriptor con ornamentos barrocos
 - Hot-reload para editar el fuente sin reiniciar
-- Proyecto Bitwig Studio preconfigurado
 
 ## Estructura
 
 ```
 demo-00/
 ├── musa/
-│   ├── main.rb      # Setup: clock, voces, helpers
-│   ├── score.rb     # Tu composición (hot-reloadable)
-│   ├── Gemfile      # Dependencias
-│   └── Gemfile.lock
-└── bw/
-    └── demo/        # Proyecto Bitwig Studio
+    ├── main.rb      # Setup: clock, voces, helpers
+    ├── score.rb     # Tu composición (hot-reloadable)
+    ├── Gemfile      # Dependencias
+    └── Gemfile.lock
 ```
 
 ## Ejecutar
@@ -37,17 +34,16 @@ ruby main.rb
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Clock | DAW → musa-dsl |
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Melodía | 1          |
-| Melodía | 2          |
-| Melodía | 3          |
-| Melodía | 4          |
+**Modo Slave**: esta demo requiere dos puertos MIDI virtuales (Main + Clock). El DAW controla el tempo. Pulsa Play en el DAW para iniciar.
+
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Melodía | 1          | Melodía |
+| Melodía | 2          | Melodía |
+| Melodía | 3          | Melodía |
+| Melodía | 4          | Melodía |
 
 ## Uso
 
@@ -147,15 +143,6 @@ scale = Scales.et12[440.0].minor[57]      # La menor
 scale = Scales.et12[440.0].dorian[62]     # Re dórico
 scale = Scales.et12[440.0].pentatonic_major[60]  # Pentatónica
 ```
-
-## Proyecto Bitwig incluido
-
-El directorio `bw/demo/` contiene un proyecto Bitwig Studio preconfigurado:
-
-1. Abrir `bw/demo/demo.bwproject` en Bitwig
-2. Verificar que los puertos MIDI `Clock` y `Main` están conectados
-3. Ajustar las 4 pistas MIDI recibiendo en canales 1-4
-4. Presionar PLAY
 
 ## Buenas prácticas
 

@@ -32,14 +32,12 @@ Progresiones armónicas con modulación. `PN()` permite definir la frase recursi
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Melodía | 1 |
-| Acordes | 2 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Melodía | 1 | Línea melódica generativa |
+| Acordes | 2 | Progresión armónica |
 
 ## API de GenerativeGrammar
 

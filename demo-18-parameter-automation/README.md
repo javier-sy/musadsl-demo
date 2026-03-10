@@ -8,14 +8,12 @@ Automatización de parámetros musicales usando `SIN()` para envolventes sinusoi
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Voz principal | 1 |
-| Voz secundaria | 2 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Voz principal | 1 | Melodía con automatización |
+| Voz secundaria | 2 | Acompañamiento |
 
 ### Control Changes utilizados
 
@@ -24,7 +22,7 @@ Automatización de parámetros musicales usando `SIN()` para envolventes sinusoi
 | CC1 | Modulation Wheel | Fade in/out automático |
 | CC64 | Sustain Pedal | On/off para legato |
 
-**Nota:** Asegúrate de que el instrumento responde a CC1 y CC64.
+**Nota:** El proyecto DAW compartido ya responde a CC1. Para CC64 (sustain), verifica que el instrumento lo soporta.
 
 ## Requisitos
 

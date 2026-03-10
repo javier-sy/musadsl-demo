@@ -33,15 +33,16 @@ ruby main_slave.rb
 
 ## Configuración DAW
 
-| Puerto | Dirección | Modo |
-|--------|-----------|------|
-| Clock | DAW → musa-dsl | Solo Slave |
-| Main | musa-dsl → DAW | Ambos |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Melodía | 1 |
-| Acordes | 2 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Melodía | 1 | Línea melódica |
+| Acordes | 2 | Progresión armónica |
+
+**Modo Master** (`main_master.rb`): musa-dsl controla el tempo con TimerClock. Solo se necesita el puerto Main.
+
+**Modo Slave** (`main_slave.rb`): el DAW controla el tempo. Se necesitan dos puertos MIDI virtuales (Main + Clock). Pulsa Play en el DAW para iniciar.
 
 ## Comparación de modos
 

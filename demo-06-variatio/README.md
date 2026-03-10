@@ -24,13 +24,11 @@ Variatio genera todas las combinaciones posibles de los campos definidos:
 
 ## Configuración DAW
 
-| Puerto | Dirección |
-|--------|-----------|
-| Main | musa-dsl → DAW |
+Usa el proyecto DAW compartido (`daw-bitwig/` o `daw-live/`). Ver [README principal](../README.md#proyecto-daw-compartido).
 
-| Pista | Canal MIDI |
-|-------|------------|
-| Motivo | 1 |
+| Pista | Canal MIDI | Rol |
+|-------|------------|-----|
+| Motivo | 1 | Motivo |
 
 ## Variatio API
 
