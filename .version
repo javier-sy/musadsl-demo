@@ -1,0 +1,7 @@
+# Configuración de versión para musadsl-demo
+TYPE="repo"
+PKG_NAME="musadsl-demo"
+TEST_COMMAND=""
+PUBLISH_PLATFORM="GitHub"
+# Los demos son colección de contenido, no software con versión: publish = git push, sin tag.
+TAG_ON_PUBLISH=false
